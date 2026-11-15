@@ -1,0 +1,3 @@
+# Falso positivo: chave fictícia no formato do Stripe usada no teste de mascaramento
+# (packages/core/src/redact.test.ts). Desde então o valor é montado em tempo de execução.
+09fa68756bf2d1cf567d438a0c10d9adeb6e434c:packages/core/src/redact.test.ts:stripe-access-token:15

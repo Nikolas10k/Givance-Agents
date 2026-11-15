@@ -12,7 +12,9 @@ describe('mascaramento', () => {
     expect(redactText('escreva para joao.silva@exemplo.com.br')).toBe('escreva para [email]');
     expect(redactText('CPF 123.456.789-09')).toBe('CPF [cpf]');
     expect(redactText('CNPJ 12.345.678/0001-90')).toBe('CNPJ [cnpj]');
-    expect(redactText('chave sk_live_abcdefghijklmnop1234')).toBe('chave [token]');
+    // Montado em tempo de execução para o verificador de segredos não confundir com uma chave real.
+    const chaveFicticia = ['sk', 'live', 'abcdefghijklmnop1234'].join('_');
+    expect(redactText(`chave ${chaveFicticia}`)).toBe('chave [token]');
     expect(redactText('Authorization: Bearer abc.def-123456')).toBe(
       'Authorization: Bearer [token]',
     );
