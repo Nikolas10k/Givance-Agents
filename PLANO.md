@@ -562,7 +562,7 @@ Cada tipo de ação tem um nível, configurável por você no painel (`autonomy_
 
 - **Minimização:** os agentes recebem só o necessário; dados de leads entram no contexto mascarados quando possível.
 - **Logs:** mascaramento automático (telefone, e-mail, CPF, nomes de leads) em `agent_steps` e `audit_log`. Conteúdo bruto de conversas fica em tabela própria, com retenção configurável.
-- **Dados sensíveis (art. 11):** dados de saúde de pacientes nunca vão para logs nem para a memória vetorial; o `atendente` (Fase 2) é instruído e limitado a não coletar esses dados além do mínimo para agendamento.
+- **Dados sensíveis (art. 11):** dados de saúde de pacientes nunca vão para logs nem para a memória vetorial; o `atendente` (Fase 4) é instruído e limitado a não coletar esses dados além do mínimo para agendamento.
 - **Direitos do titular:** `data_requests` com fluxo de exportação e exclusão (cascata por `org_id` e por `subject_ref`).
 - **Consentimento:** opt-in registrado para WhatsApp; termos e DPA aceitos no onboarding da empresa.
 - **Exclusão de empresa:** remove dados, revoga tokens na Meta/Google e apaga segredos do Vault.
