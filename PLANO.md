@@ -2,7 +2,7 @@
 
 > Plataforma que vende **"funcionários de IA"** para PMEs brasileiras. Cada funcionário é um time de agentes coordenado por um orquestrador, que executa tarefas reais e presta contas como um colaborador humano.
 >
-> **Status:** proposta para aprovação, **revisão 2**. Nenhum código foi escrito ainda. A seção [0. Decisões que preciso de você](#0-decisões-que-preciso-de-você) lista o que precisa ser fechado antes da Fase 1.
+> **Status:** revisão 2 aprovada. **Fase 1a (fundação) concluída**: veja o [README](README.md) e o [checklist da Fase 1a](docs/checklists/fase-1a.md). Próxima etapa: 1b (canal WhatsApp).
 >
 > **O que mudou na revisão 2:** além do tráfego pago, o sistema agora cobre **e-mail** (triagem e resposta), **agenda** (marcar reuniões), **avisos do que é importante no WhatsApp** e **posts no Instagram por comando**. O WhatsApp virou o canal principal de comando. Novos agentes: `social`, `triagem` e `secretaria`. Entram níveis de autonomia por tipo de ação (8.2) e um cargo combinado, o **Braço Direito**. O roadmap foi reordenado: você é o primeiro usuário.
 
@@ -388,11 +388,11 @@ Cargos podem ser combinados. O funcionário que "faz tudo" é um pacote de três
 key: braco-direito
 version: 1
 nome_exibicao: "Braço Direito"
-inclui: [assistente-executivo, social-media, analista-trafego-pago]
+inclui: [assistente-executivo, social-media]   # v2 (Fase 2) inclui analista-trafego-pago
 canal_principal: whatsapp
 ```
 
-O orquestrador do pacote recebe todos os comandos e escolhe o especialista certo. Ferramentas, permissões e limites vêm de cada cargo incluído; em caso de conflito, vence o mais restritivo.
+O orquestrador do pacote recebe todos os comandos e escolhe o especialista certo. Ferramentas vêm somadas de cada cargo incluído. Permissões: vence sempre a mais restritiva. Limites: os declarados no próprio pacote valem; os ausentes usam o menor valor entre os incluídos (um pacote faz mais coisas e pode precisar de mais orçamento por tarefa).
 
 O carregador valida o YAML na CI (schema Zod) e confere se todo prompt e toda ferramenta citada existem. Na Fase 3, o editor no admin passa a gravar `role_versions` direto no banco, usando o mesmo schema.
 
