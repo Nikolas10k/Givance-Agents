@@ -47,7 +47,7 @@ A aprovação costuma levar de minutos a um dia.
 - [ ] A resposta "Pronto!" confirma. A partir daí, mande pedidos por lá (para posts, a foto com o pedido na legenda).
 - [ ] Opcional: horário de silêncio. Por enquanto, via SQL:
   `update channels set quiet_hours = '{"inicio":"22:00","fim":"07:00"}' where address_e164 = '+55...';`
-  (a edição pelo painel entra na etapa 1e).
+  (a edição pelo painel entra na etapa 1g).
 
 ## Como o canal se comporta
 

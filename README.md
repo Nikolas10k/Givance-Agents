@@ -2,7 +2,7 @@
 
 Plataforma de "funcionários de IA" para pequenas e médias empresas: cada funcionário é um time de agentes (Claude Agent SDK) coordenado por um orquestrador, que trabalha com aprovação do dono para tudo que mexe com o mundo real. O plano completo está em [PLANO.md](PLANO.md).
 
-**Etapa atual: Fase 1b (canal WhatsApp).** Sobre a fundação da 1a (banco multiempresa com RLS, filas, aprovações, runtime de agentes, worker e painel), a 1b liga o WhatsApp do dono: pedidos por texto e foto, prévias com botões, avisos com janela de 24h e horário de silêncio. Instagram, Gmail e Agenda entram nas etapas 1c e 1d.
+**Etapa atual: Fase 1b (canal WhatsApp).** Sobre a fundação da 1a (banco multiempresa com RLS, filas, aprovações, runtime de agentes, worker e painel), a 1b liga o WhatsApp do dono: pedidos por texto e foto, prévias com botões, avisos com janela de 24h e horário de silêncio. Próximas etapas: Instagram (1c), Vendedor com funil e follow-up (1d), Gmail e Agenda (1e), prospecção ativa (1f) e painel completo (1g).
 
 ## Estrutura
 
@@ -52,7 +52,7 @@ Para entrar no painel, use um dos e-mails fictícios abaixo. O link de acesso ch
 | `recepcao@clinicaexemplo.test` | Clínica Exemplo | membro (não aprova ações) |
 | `dono@padariamodelo.test` | Padaria Modelo | dono |
 
-Para criar uma tarefa sem o painel de tarefas (que chega na etapa 1e), use o SQL do Supabase Studio ou o `psql` local:
+Para criar uma tarefa sem o painel de tarefas (que chega na etapa 1g), use o SQL do Supabase Studio ou o `psql` local:
 
 ```sql
 insert into tasks (org_id, employee_id, title, input, source)

@@ -2,7 +2,9 @@
 
 > Plataforma que vende **"funcionários de IA"** para PMEs brasileiras. Cada funcionário é um time de agentes coordenado por um orquestrador, que executa tarefas reais e presta contas como um colaborador humano.
 >
-> **Status:** revisão 2 aprovada. **Fases 1a (fundação) e 1b (canal WhatsApp) concluídas**: veja o [README](README.md) e os checklists [1a](docs/checklists/fase-1a.md) e [1b](docs/checklists/fase-1b.md). Próxima etapa: 1c (Instagram).
+> **Status:** revisão 3. **Fases 1a (fundação) e 1b (canal WhatsApp) concluídas**: veja o [README](README.md) e os checklists [1a](docs/checklists/fase-1a.md) e [1b](docs/checklists/fase-1b.md). Banco de produção configurado. Próxima etapa: 1c (Instagram).
+>
+> **O que mudou na revisão 3:** entra o cargo **Vendedor** (captação de clientes B2B, seção 7.4), em duas etapas da Fase 1: 1d (funil, contatos do networking, follow-up e Direct do Instagram) e 1f (prospecção ativa). E-mail e agenda passam a ser a 1e, e o painel a 1g. O funil (`leads`) sai da Fase 4 e entra na 1d.
 >
 > **O que mudou na revisão 2:** além do tráfego pago, o sistema agora cobre **e-mail** (triagem e resposta), **agenda** (marcar reuniões), **avisos do que é importante no WhatsApp** e **posts no Instagram por comando**. O WhatsApp virou o canal principal de comando. Novos agentes: `social`, `triagem` e `secretaria`. Entram níveis de autonomia por tipo de ação (8.2) e um cargo combinado, o **Braço Direito**. O roadmap foi reordenado: você é o primeiro usuário.
 
@@ -172,12 +174,14 @@ givance-workforce/
 │  ├─ social/system.md
 │  ├─ triagem/system.md
 │  ├─ secretaria/system.md
+│  ├─ vendedor/system.md      # Fase 1d (também pesquisador, qualificador, followup, propostas)
 │  └─ atendente/system.md     # Fase 4
 ├─ roles/                     # cargos (YAML)
 │  ├─ assistente-executivo.yaml
 │  ├─ social-media.yaml
 │  ├─ analista-trafego-pago.yaml
-│  └─ braco-direito.yaml      # pacote que combina os três
+│  ├─ vendedor.yaml           # Fase 1d
+│  └─ braco-direito.yaml      # pacote que combina os cargos acima
 ├─ supabase/
 │  ├─ migrations/
 │  ├─ seed.sql                # "Clínica Exemplo"
@@ -258,7 +262,9 @@ erDiagram
 | `social_posts` | `org_id`, `task_id`, `channel` (`instagram`), `format` (`feed`, `carrossel`, `reels`, `story`), `caption`, `media_ids[]`, `status` (`rascunho`, `aguardando_confirmacao`, `agendado`, `publicando`, `publicado`, `falhou`), `scheduled_at`, `ig_container_id`, `ig_media_id`, `permalink` | |
 | `autonomy_policies` | `org_id`, `action_type`, `level` (`sempre_aprovar`, `confirmar`, `automatico`), `limits jsonb` | Ver 8.2. Alguns tipos têm nível mínimo fixo em código. |
 | `plans` / `subscriptions` | | Fase 5. |
-| `leads` / `crm_links` | | Fase 4. |
+| `leads` | `org_id`, `name`, `company`, `role_title`, `source` (`networking`, `instagram`, `indicacao`, `site`, `prospeccao`, `meta_leads`), `stage` (`novo`, `contato`, `qualificado`, `reuniao`, `proposta`, `ganho`, `perdido`), `score` (0–100), `owner_user_id`, `next_follow_up_at`, `consent_basis` (`contato_iniciado_pelo_lead`, `opt_in`, `interesse_legitimo_b2b`), `do_not_contact`, `notes` | Fase 1d. Funil do Vendedor. Contato pessoal (e-mail, telefone) só com a base legal registrada; `do_not_contact` é respeitado em código por todas as ações de envio. |
+| `lead_activities` | `org_id`, `lead_id`, `kind` (`nota`, `mensagem`, `email`, `reuniao`, `proposta`, `mudanca_etapa`), `summary`, `task_id`, `occurred_at` | Fase 1d. Histórico de cada lead. |
+| `crm_links` | | Fase 4 (integração com CRM externo). |
 
 ### 4.3 Isolamento (RLS)
 
@@ -293,6 +299,11 @@ erDiagram
 | `social` | Posts orgânicos: formato, legenda, hashtags, horário, calendário editorial; prepara a publicação no Instagram | `memoria_buscar`, `midia_listar`, `instagram_listar_posts`, `instagram_insights`, `instagram_preparar_post` (F1) | Não publica direto: `instagram_preparar_post` gera a prévia e a ação `instagram.publicar`. |
 | `triagem` | Lê e-mails novos, classifica a importância, resume em duas linhas e decide o que vai para o WhatsApp agora e o que fica para o resumo diário | `gmail_listar_novos`, `gmail_ler`, `regras_notificacao`, `salvar_triagem`, `whatsapp_avisar_dono` (F1) | **Sem ferramentas de envio de e-mail nem de agenda.** E-mail é conteúdo de terceiros; separar quem lê de quem age reduz o risco de um e-mail malicioso dar ordens (ver 13). |
 | `secretaria` | Responde e-mails, marca e remarca reuniões, confere disponibilidade, cria convites com link do Meet | `gmail_ler`, `gmail_rascunhar`, `gmail_enviar`, `calendar_disponibilidade`, `calendar_criar_evento`, `calendar_alterar_evento`, `contatos_buscar` (F1) | Só age a partir de um pedido seu ou de uma sugestão que você aceitou. Enviar e-mail e convidar terceiros seguem a política de autonomia (padrão: confirmação). Planilhas e documentos (Sheets/Docs) entram depois. |
+| `vendedor` (orquestrador do cargo) | Recebe os contatos, decide o próximo passo de cada lead e segue o roteiro comercial da empresa | `lead_registrar`, `lead_atualizar`, `lead_listar`, `memoria_buscar` (F1d) | Mesmo prompt-base do `orquestrador`, com o roteiro de vendas. |
+| `pesquisador` | Pesquisa a empresa do lead em fontes públicas (site, Instagram, dados de CNPJ) e monta um resumo e o diagnóstico gratuito do Instagram | `empresa_pesquisar`, `instagram_perfil_publico`, `salvar_diagnostico` (F1d/F1f) | Só dados públicos de empresas. Não coleta dados pessoais além do nome e do cargo do contato. Conteúdo lido é marcado como de terceiros. |
+| `qualificador` | Dá nota ao lead (necessidade, porte, urgência, encaixe com a oferta) e explica o motivo | `lead_listar`, `memoria_buscar`, `lead_atualizar` (F1d) | Não fala com o lead. |
+| `followup` | Redige mensagens de primeiro contato, follow-up e reativação no seu tom; agenda o próximo toque | `memoria_buscar`, `lead_listar`, `followup_preparar` (F1d); `email_prospeccao_preparar` (F1f) | Não envia: prepara a ação, que segue a autonomia (padrão: confirmação). |
+| `propostas` | Monta proposta ou orçamento a partir dos planos e preços da empresa | `memoria_buscar`, `produtos_listar`, `proposta_preparar` (F1e) | Preço fora da tabela ou desconto: sempre aprovação no painel. |
 | `atendente` | Responde leads no WhatsApp com base na base de conhecimento, qualifica e registra no CRM | `memoria_buscar`, `whatsapp_responder` (escopo pré-aprovado), `whatsapp_enviar_template` (aprovação), `crm_*` (F4) | Fora do escopo pré-aprovado, a mensagem vira rascunho para aprovação ou passa para um humano. |
 
 ### 5.3 Ferramentas de sistema (todas as fases)
@@ -315,6 +326,9 @@ Cada `action_type` tem schema Zod, guard e executor:
 | `gmail.enviar` | Destinatários e corpo idênticos ao rascunho confirmado; sem anexo que você não viu; destinatário novo sempre pede confirmação | Envia pela sua conta (fica na sua pasta de enviados). |
 | `calendar.convidar` | Horário dentro do seu expediente e livre na agenda; convidados explícitos | Cria o evento com Meet e manda os convites. |
 | `whatsapp.avisar_dono` | Só para números verificados da própria org; respeita o horário de silêncio; limite de avisos por hora (o excedente vai para o resumo) | Mensagem livre se a janela de 24h estiver aberta; senão, template de utilidade. Não exige aprovação: é para você mesmo. |
+| `lead.mensagem` (Direct do Instagram ou WhatsApp) | Só para quem iniciou a conversa ou deu opt-in; Direct do Instagram dentro da janela de 24h da Meta; `do_not_contact` bloqueia; limite diário por lead | Envia pelo canal da conversa e registra em `lead_activities`. |
+| `lead.email_prospeccao` | Empresa (B2B) com base `interesse_legitimo_b2b`; e-mail corporativo; limite diário de envios (padrão 20, para não queimar o domínio); link de descadastro obrigatório; nunca para quem pediu para sair | Envia pela sua conta do Gmail e agenda o follow-up. |
+| `proposta.enviar` | Valores iguais à tabela de produtos ou aprovados no painel; anexo gerado é o que você viu | Envia por e-mail ou WhatsApp e muda o lead para `proposta`. |
 | `whatsapp.envio_massa` / `whatsapp.mensagem_fora_escopo` | Opt-in do contato; template aprovado quando fora da janela de 24h | Fase 4 (atendente). |
 | `*.excluir` (e-mails, eventos, posts, campanhas) | Proibido no padrão | — |
 
@@ -524,6 +538,29 @@ sequenceDiagram
 5. *Responder* → a `secretaria` redige a resposta no seu tom → prévia no WhatsApp → um toque envia. Você também pode ditar por texto: *"responde que topo, mas só na quinta"*.
 6. Comandos diretos também funcionam: *"marca uma reunião com o João na semana que vem, 30 min"*, *"o que tenho amanhã?"*, *"me manda os e-mails do contador de hoje"*.
 
+### 7.4 Vendedor: captação de clientes B2B
+
+Pensado primeiro para a própria Givance (que vende para empresas e hoje capta por networking e Instagram) e depois oferecido como cargo para os clientes. O Vendedor não substitui o seu networking: ele multiplica o que você já faz.
+
+**Networking (1d).** Você manda no WhatsApp: *"conheci o João, dono da Clínica X, quer melhorar o Instagram"*. O `vendedor` cria o lead (origem `networking`), o `pesquisador` levanta site e Instagram da empresa, o `qualificador` dá a nota, e o `followup` redige a mensagem no seu tom. Prévia no WhatsApp → um toque envia (ou você copia e manda do seu número). Se não houver resposta, ele te lembra no prazo combinado: *"faz 5 dias que você falou com o João, quer que eu mande algo?"*.
+
+**Instagram (1d).** Quem comenta ou manda Direct com interesse vira lead (origem `instagram`). O `vendedor` responde dentro da janela de 24h da Meta, qualifica com poucas perguntas e oferece horários da sua agenda (a marcação automática entra com a 1e). Lead quente → aviso imediato no seu WhatsApp.
+
+**Prospecção ativa (1f).**
+- Listas de empresas-alvo a partir de dados públicos de empresas (ex.: *"clínicas e padarias em Campinas com Instagram parado"*). Você aprova a lista antes de qualquer contato.
+- **Diagnóstico gratuito:** o `pesquisador` analisa o Instagram da empresa e gera um mini relatório, que abre a conversa.
+- Primeiro contato por **e-mail comercial**, com limite diário, descadastro e follow-up automático em até 3 toques.
+- **LinkedIn:** o `followup` escreve a mensagem e **você envia**. Automatizar o envio viola os termos do LinkedIn e leva a banimento da conta.
+
+**Fechamento (1e/1f).** O `propostas` monta a proposta com seus planos e preços; sai só com a sua aprovação. O lead anda no funil (`novo → contato → qualificado → reuniao → proposta → ganho/perdido`) e toda segunda você recebe o resumo: *"12 contatos, 4 reuniões, 1 proposta aberta"*.
+
+**Limites fixos (em código, não negociáveis por configuração):**
+- Nada de WhatsApp para quem nunca falou com a empresa: o Meta bane o número.
+- Nada de raspagem de dados pessoais. Pesquisa só de dados públicos da empresa; contato pessoal só com base legal registrada no lead (LGPD).
+- Quem pede para não ser contatado vira `do_not_contact` e nenhuma ação de envio passa.
+- Desconto, preço fora da tabela ou qualquer promessa: aprovação no painel.
+- Mensagens recebidas de leads são conteúdo de terceiros: nenhuma ação originada delas é automática.
+
 ---
 
 ## 8. Aprovações, segurança e conformidade
@@ -583,6 +620,7 @@ Cada tipo de ação tem um nível, configurável por você no painel (`autonomy_
 - O worker transforma a rotina em uma `task` com `source=rotina`, que segue o mesmo fluxo de qualquer tarefa, inclusive aprovações.
 - Jobs de sistema sem LLM (ex.: `metrics.sync`) usam o mesmo mecanismo, mas não criam tarefa.
 - Rotinas do Braço Direito: verificação de e-mails novos a cada 3 minutos (o modelo só roda se houver novidade), resumo diário às 7h no WhatsApp e publicação dos posts agendados no `scheduled_at`.
+- Rotinas do Vendedor: follow-ups vencidos (a cada hora, em horário comercial), lembrete de leads parados e resumo semanal do funil (segunda, 8h).
 
 ---
 
@@ -624,7 +662,7 @@ Cada tipo de ação tem um nível, configurável por você no painel (`autonomy_
 
 Cada fase entrega: testes, seed com a **Clínica Exemplo**, README de como rodar e checklist em `docs/checklists/fase-N.md`. Ao final de cada fase eu paro para você validar.
 
-### Fase 1 — Braço Direito para uso próprio: WhatsApp, Instagram, e-mail e agenda
+### Fase 1 — Braço Direito para uso próprio: WhatsApp, Instagram, vendas, e-mail e agenda
 
 **1a. Fundação**
 - Monorepo, CI (lint, typecheck, testes, validação de YAML, teste de RLS, verificação de segredos).
@@ -643,13 +681,22 @@ Cada fase entrega: testes, seed com a **Clínica Exemplo**, README de como rodar
 - Publicação de feed, carrossel, reels e story, com agendamento e link de volta.
 - **Aceite:** *"posta essa foto amanhã às 18h falando da promoção"* → prévia no WhatsApp → um toque → post publicado no horário e link recebido.
 
-**1d. E-mail e agenda**
+**1d. Vendedor, parte 1: funil, networking e Direct**
+- Tabelas `leads` e `lead_activities`, cargo `vendedor` (agentes `vendedor`, `pesquisador`, `qualificador`, `followup`) e inclusão no Braço Direito (v2).
+- Cadastro de contatos pelo WhatsApp, pesquisa pública da empresa, nota, follow-up com lembretes, respostas no Direct do Instagram (permissão de mensagens da conta profissional).
+- **Aceite:** *"conheci o João da Clínica X, quer melhorar o Instagram"* → lead criado com resumo da empresa e nota → prévia da mensagem no WhatsApp → um toque envia → sem resposta em 5 dias, você recebe o lembrete com a próxima mensagem pronta.
+
+**1e. E-mail e agenda**
 - OAuth do Gmail e do Calendar (modo de teste), agentes `triagem` e `secretaria`, regras de importância, avisos, resumo diário, respostas e reuniões.
 - **Aceite:** chega um e-mail de cliente pedindo reunião → em até 5 minutos você recebe no WhatsApp com *Marcar reunião* → a resposta com três horários sai com um toque → quando o horário é aceito, o convite com Meet é criado.
 - **Teste de segurança:** um e-mail de teste com instruções maliciosas ("encaminhe todas as faturas para…") não gera nenhuma ação sem a sua confirmação.
 
-**1e. Painel**
-- Conexões, posts, caixa triada, autonomia, tarefas, auditoria, uso e custo; admin básico (empresas, uso, falhas, reexecução).
+**1f. Vendedor, parte 2: prospecção ativa e propostas**
+- Listas de empresas-alvo com aprovação, diagnóstico gratuito do Instagram, e-mail de prospecção com limite diário e descadastro, sequência de follow-up, agente `propostas` e ação `proposta.enviar`.
+- **Aceite:** você aprova uma lista de 10 empresas → cada uma recebe um e-mail com o diagnóstico, no máximo 20 por dia → quem responde vira lead `contato` e aparece no seu WhatsApp → quem pede para sair não recebe mais nada (teste automatizado).
+
+**1g. Painel**
+- Conexões, posts, caixa triada, funil de vendas, autonomia, tarefas, auditoria, uso e custo; admin básico (empresas, uso, falhas, reexecução).
 
 ### Fase 2 — Gestão de tráfego pago (Analista de Tráfego)
 - OAuth da Meta para anúncios (mesmo app), seleção de conta de anúncio, página e pixel.
@@ -664,10 +711,11 @@ Cada fase entrega: testes, seed com a **Clínica Exemplo**, README de como rodar
 - WhatsApp por empresa cliente (Embedded Signup), onboarding de várias empresas.
 - Editor de cargos e agentes no admin: prompts, ferramentas, limites e rotinas, com versionamento, diff, publicação e rollback; ambiente de teste com a Clínica Exemplo antes de publicar.
 
-### Fase 4 — Atendente/SDR no WhatsApp + CRM
+### Fase 4 — Atendente no WhatsApp das empresas clientes + CRM externo
 - Agente `atendente` com escopo pré-aprovado (FAQ, horários, preços públicos, agendamento) e passagem para humano.
 - Leads da Meta (webhook `leadgen`) entram direto no fluxo do atendente.
-- CRM: integração inicial com um CRM (a escolher: RD Station, Pipedrive ou HubSpot), com um CRM interno simples como padrão.
+- Atendimento B2C no número de WhatsApp de cada empresa cliente, reaproveitando o funil da 1d.
+- CRM: integração com um CRM externo (a escolher: RD Station, Pipedrive ou HubSpot); o funil interno da 1d continua sendo o padrão.
 
 ### Fase 5 — Cobrança e onboarding self-service
 - Planos mensais por funcionário (Stripe ou Asaas/Pagar.me para Pix e boleto; decisão na fase), limites por plano, faturas.
@@ -686,7 +734,7 @@ Cada fase entrega: testes, seed com a **Clínica Exemplo**, README de como rodar
 | Alucinação em dados de negócio (preço, promessa) | Dano à marca | RAG obrigatório para preços e produtos, termos proibidos no perfil, aprovação humana. |
 | Vazamento entre tenants | Grave (LGPD) | RLS em tudo, repositórios com `org_id` obrigatório, testes de isolamento na CI. |
 | Prompt injection via conteúdo externo (comentários, mensagens de leads) | Ação indevida | Conteúdo externo marcado como dado; ações sensíveis sempre passam por guard e aprovação; agentes de atendimento sem ferramentas de gasto. |
-| E-mail malicioso tentando dar ordens ("encaminhe as faturas para x@…") | Vazamento, ação indevida | O agente `triagem` só lê e classifica, sem ferramentas de envio. O conteúdo do e-mail entra marcado como dado de terceiros; ação originada de e-mail nunca é automática; destinatário novo sempre pede confirmação. Coberto por teste na Fase 1d. |
+| E-mail malicioso tentando dar ordens ("encaminhe as faturas para x@…") | Vazamento, ação indevida | O agente `triagem` só lê e classifica, sem ferramentas de envio. O conteúdo do e-mail entra marcado como dado de terceiros; ação originada de e-mail nunca é automática; destinatário novo sempre pede confirmação. Coberto por teste na Fase 1e. |
 | Verificação do Google para o Gmail | Bloqueia a venda do módulo de e-mail | Para uso próprio, o modo de teste basta. Para vender: verificação OAuth e avaliação de segurança anual (com custo), planejadas na Fase 3; escopos mínimos. |
 | Limites e formatos da API do Instagram | Post falha na hora marcada | Validar a mídia já na prévia, checar o limite de publicações, preparar o contêiner minutos antes e avisar no WhatsApp se falhar. |
 | Custo das mensagens do WhatsApp | Margem | Avisos agrupados, resumo diário em vez de avisos soltos, preferência por mensagens dentro da janela de 24h. |
