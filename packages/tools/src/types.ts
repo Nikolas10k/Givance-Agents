@@ -166,6 +166,16 @@ export interface ToolServices {
   messages: {
     /** Registra uma mensagem do funcionário para o dono, na conversa da tarefa. */
     sendToOwner(orgId: string, taskId: string, content: string): Promise<{ messageId: string }>;
+    /**
+     * Aviso no WhatsApp do dono (canal verificado mais recente). Devolve null se a empresa
+     * ainda não tem número verificado.
+     */
+    notifyOwner(input: {
+      orgId: string;
+      employeeId: string;
+      taskId: string | null;
+      content: string;
+    }): Promise<{ messageId: string } | null>;
   };
 }
 

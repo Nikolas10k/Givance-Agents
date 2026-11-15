@@ -320,6 +320,32 @@ export function createSupabaseToolServices(db: TypedClient): ToolServices {
     },
 
     messages: {
+      async notifyOwner(input) {
+        const canal = await ownerWhatsAppChannel(db, input.orgId);
+        if (!canal) return null;
+        const conversationId = await whatsappConversation(
+          db,
+          input.orgId,
+          input.employeeId,
+          canal.id,
+        );
+        const message = unwrap(
+          'aviso: gravar',
+          await db
+            .from('messages')
+            .insert({
+              org_id: input.orgId,
+              conversation_id: conversationId,
+              task_id: input.taskId,
+              author: 'funcionario',
+              content: input.content.slice(0, 20000),
+              delivery_status: 'pendente',
+            })
+            .select('id')
+            .single(),
+        );
+        return { messageId: message.id };
+      },
       async sendToOwner(orgId, taskId, content) {
         const task = unwrap(
           'mensagem: ler tarefa',
@@ -381,4 +407,67 @@ export function createSupabaseToolServices(db: TypedClient): ToolServices {
       },
     },
   };
+}
+
+/** Canal de WhatsApp verificado do dono ou admin, o usado mais recentemente. */
+export async function ownerWhatsAppChannel(db: TypedClient, orgId: string) {
+  const gestores = unwrapMaybe(
+    'canal: gestores',
+    await db
+      .from('memberships')
+      .select('user_id')
+      .eq('org_id', orgId)
+      .in('role', ['owner', 'admin']),
+  );
+  const ids = (gestores ?? []).map((m) => m.user_id);
+  if (ids.length === 0) return null;
+  const canais = unwrapMaybe(
+    'canal: verificados',
+    await db
+      .from('channels')
+      .select('id, user_id, address_e164, last_inbound_at, quiet_hours')
+      .eq('org_id', orgId)
+      .eq('kind', 'whatsapp')
+      .not('verified_at', 'is', null)
+      .in('user_id', ids)
+      .order('last_inbound_at', { ascending: false, nullsFirst: false })
+      .limit(1),
+  );
+  return canais?.[0] ?? null;
+}
+
+/** Conversa de WhatsApp do funcionário com um canal (cria se não existir). */
+export async function whatsappConversation(
+  db: TypedClient,
+  orgId: string,
+  employeeId: string,
+  channelId: string,
+): Promise<string> {
+  const existente = unwrapMaybe(
+    'conversa: buscar',
+    await db
+      .from('conversations')
+      .select('id')
+      .eq('org_id', orgId)
+      .eq('employee_id', employeeId)
+      .eq('channel', 'whatsapp')
+      .eq('channel_id', channelId)
+      .limit(1)
+      .maybeSingle(),
+  );
+  if (existente) return existente.id;
+  const nova = unwrap(
+    'conversa: criar',
+    await db
+      .from('conversations')
+      .insert({
+        org_id: orgId,
+        employee_id: employeeId,
+        channel: 'whatsapp',
+        channel_id: channelId,
+      })
+      .select('id')
+      .single(),
+  );
+  return nova.id;
 }

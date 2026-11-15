@@ -4,7 +4,7 @@ import type { ActionDefinition } from './definitions';
 export interface AutonomyInput {
   action: Pick<
     ActionDefinition,
-    'type' | 'defaultAutonomy' | 'minAutonomy' | 'spendsMoney' | 'destructive'
+    'type' | 'defaultAutonomy' | 'minAutonomy' | 'spendsMoney' | 'destructive' | 'selfDirected'
   >;
   /** Nível padrão do cargo (roles/*.yaml, permissoes.acoes). */
   roleLevel?: AutonomyLevel;
@@ -59,7 +59,7 @@ export function resolveAutonomy(input: AutonomyInput): AutonomyDecision {
       'Ações que gastam dinheiro sempre passam por aprovação no painel.',
     );
   }
-  if (input.tainted) {
+  if (input.tainted && !action.selfDirected) {
     applyFloor(
       'confirmar',
       'Pedida depois de ler conteúdo de terceiros (e-mail ou mensagem): precisa da sua confirmação.',

@@ -130,6 +130,33 @@ export const clienteResponder = defineTool({
   },
 });
 
+export const whatsappAvisarDono = defineTool({
+  name: 'whatsapp_avisar_dono',
+  description:
+    'Manda um aviso curto para o WhatsApp do dono, para algo que precisa da atenção dele agora ' +
+    '(ex.: e-mail importante). Use com parcimônia: o que pode esperar vai para o resumo diário. ' +
+    'Escreva o aviso em uma ou duas frases, sem dados pessoais desnecessários.',
+  input: {
+    mensagem: z.string().min(3).max(1000).describe('Texto do aviso.'),
+  },
+  async handler(ctx, args) {
+    const result = await requestAction(ctx, {
+      type: 'whatsapp.avisar_dono',
+      payload: { mensagem: args.mensagem },
+      reason: 'Aviso para o dono',
+    });
+    if (result.status === 'invalida') {
+      return { isError: true, text: `${result.message} ${result.problems.join('; ')}` };
+    }
+    if (result.status === 'desconhecida' || result.status === 'proibida') {
+      return { isError: true, text: result.message };
+    }
+    return {
+      text: result.status === 'pendente' ? result.message : 'Aviso registrado para envio ao dono.',
+    };
+  },
+});
+
 /** Texto que descreve, para o modelo, as ações que o cargo pode pedir e o formato de cada uma. */
 export function describeActions(registry: Registry, permissions: RolePermissions): string {
   const linhas: string[] = [];
@@ -196,6 +223,7 @@ export function systemTools(actionsDescription: string): ToolDefinition[] {
     salvarArtefato,
     artefatosListar,
     clienteResponder,
+    whatsappAvisarDono,
     createAcaoSolicitar(actionsDescription),
   ];
 }
@@ -207,4 +235,5 @@ export const SYSTEM_TOOL_NAMES = [
   'artefatos_listar',
   'cliente_responder',
   'acao_solicitar',
+  'whatsapp_avisar_dono',
 ] as const;

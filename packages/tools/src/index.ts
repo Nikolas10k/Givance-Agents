@@ -1,4 +1,5 @@
 export * from './actions/memoria-registrar';
+export { whatsappAvisarDono as whatsappAvisarDonoAction } from './actions/whatsapp-avisar-dono';
 export * from './autonomy-engine';
 export * from './catalog';
 export * from './default-registry';

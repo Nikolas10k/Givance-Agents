@@ -57,6 +57,10 @@ async function preencherTodasAsTabelas() {
       `insert into usage_ledger (org_id, period, employee_id, cost_usd) values ($1, date_trunc('month', now())::date, $2, 1)`,
       [org, employeeId],
     );
+    await db.query(
+      `insert into media_assets (org_id, storage_path, mime_type, source) values ($1, $2, 'image/jpeg', 'whatsapp')`,
+      [org, `${org}/foto.jpg`],
+    );
   }
   // A Padaria não tem canal nem política de autonomia no seed.
   await db.query(

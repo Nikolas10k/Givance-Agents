@@ -75,6 +75,11 @@ export interface ActionDefinition<Payload extends z.ZodType = z.ZodType> {
   spendsMoney?: boolean;
   /** Apaga algo: proibido. */
   destructive?: boolean;
+  /**
+   * Só afeta o próprio dono (ex.: aviso no WhatsApp dele). Não sobe para confirmação depois de
+   * ler conteúdo de terceiros: o pior caso é um aviso indevido para o próprio dono.
+   */
+  selfDirected?: boolean;
   risk: RiskLevel;
   /** Checagens de negócio em código. Pode normalizar o payload (ex.: forçar PAUSED). */
   guard?(

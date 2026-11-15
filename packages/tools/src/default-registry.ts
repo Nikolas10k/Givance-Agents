@@ -1,11 +1,12 @@
 import { memoriaRegistrar } from './actions/memoria-registrar';
+import { whatsappAvisarDono } from './actions/whatsapp-avisar-dono';
 import { PLANNED_ACTIONS, PLANNED_TOOLS } from './catalog';
 import type { ActionDefinition, ToolDefinition } from './definitions';
 import { Registry } from './registry';
 import { SYSTEM_TOOL_NAMES, systemTools } from './system-tools';
 
 /** Ações implementadas nesta etapa. */
-export const IMPLEMENTED_ACTIONS: ActionDefinition[] = [memoriaRegistrar];
+export const IMPLEMENTED_ACTIONS: ActionDefinition[] = [memoriaRegistrar, whatsappAvisarDono];
 
 /**
  * Registro padrão. As ferramentas de sistema entram com uma descrição de ações genérica;

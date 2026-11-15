@@ -17,7 +17,7 @@
     "format:check": "prettier --check .",
     "roles:validate": "pnpm --filter @givance/agents roles:validate",
     "roles:build": "pnpm --filter @givance/agents roles:build",
-    "db:start": "supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,realtime,storage-api,postgres-meta",
+    "db:start": "supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local --schema public > packages/db/src/database.types.ts && prettier --write packages/db/src/database.types.ts",

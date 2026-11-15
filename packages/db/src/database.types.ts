@@ -220,6 +220,7 @@ export type Database = {
           org_id: string;
           payload: NonNullable<Json>;
           preview: NonNullable<Json>;
+          preview_message_id: string | null;
           reason: string | null;
           requested_by_agent: string;
           risk_level: string;
@@ -244,6 +245,7 @@ export type Database = {
           org_id: string;
           payload: NonNullable<Json>;
           preview?: NonNullable<Json>;
+          preview_message_id?: string | null;
           reason?: string | null;
           requested_by_agent: string;
           risk_level?: string;
@@ -267,6 +269,7 @@ export type Database = {
           org_id?: string;
           payload?: NonNullable<Json>;
           preview?: NonNullable<Json>;
+          preview_message_id?: string | null;
           reason?: string | null;
           requested_by_agent?: string;
           risk_level?: string;
@@ -452,9 +455,12 @@ export type Database = {
           kind: string;
           last_inbound_at: string | null;
           org_id: string;
+          pending_edit_approval_id: string | null;
           quiet_hours: Json | null;
           updated_at: string;
           user_id: string;
+          verification_code_hash: string | null;
+          verification_expires_at: string | null;
           verified_at: string | null;
         };
         ComputedFields: never;
@@ -465,9 +471,12 @@ export type Database = {
           kind?: string;
           last_inbound_at?: string | null;
           org_id: string;
+          pending_edit_approval_id?: string | null;
           quiet_hours?: Json | null;
           updated_at?: string;
           user_id: string;
+          verification_code_hash?: string | null;
+          verification_expires_at?: string | null;
           verified_at?: string | null;
         };
         Update: {
@@ -477,9 +486,12 @@ export type Database = {
           kind?: string;
           last_inbound_at?: string | null;
           org_id?: string;
+          pending_edit_approval_id?: string | null;
           quiet_hours?: Json | null;
           updated_at?: string;
           user_id?: string;
+          verification_code_hash?: string | null;
+          verification_expires_at?: string | null;
           verified_at?: string | null;
         };
         Relationships: [
@@ -607,6 +619,7 @@ export type Database = {
       conversations: {
         Row: {
           channel: string;
+          channel_id: string | null;
           created_at: string;
           employee_id: string;
           id: string;
@@ -616,6 +629,7 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           channel?: string;
+          channel_id?: string | null;
           created_at?: string;
           employee_id: string;
           id?: string;
@@ -624,6 +638,7 @@ export type Database = {
         };
         Update: {
           channel?: string;
+          channel_id?: string | null;
           created_at?: string;
           employee_id?: string;
           id?: string;
@@ -631,6 +646,13 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'conversations_channel_fk';
+            columns: ['channel_id', 'org_id'];
+            isOneToOne: false;
+            referencedRelation: 'channels';
+            referencedColumns: ['id', 'org_id'];
+          },
           {
             foreignKeyName: 'conversations_employee_id_org_id_fkey';
             columns: ['employee_id', 'org_id'];
@@ -796,6 +818,54 @@ export type Database = {
           },
         ];
       };
+      media_assets: {
+        Row: {
+          caption: string | null;
+          created_at: string;
+          created_by: string | null;
+          external_id: string | null;
+          id: string;
+          mime_type: string;
+          org_id: string;
+          size_bytes: number | null;
+          source: string;
+          storage_path: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          caption?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          external_id?: string | null;
+          id?: string;
+          mime_type: string;
+          org_id: string;
+          size_bytes?: number | null;
+          source: string;
+          storage_path: string;
+        };
+        Update: {
+          caption?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          external_id?: string | null;
+          id?: string;
+          mime_type?: string;
+          org_id?: string;
+          size_bytes?: number | null;
+          source?: string;
+          storage_path?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'media_assets_org_id_fkey';
+            columns: ['org_id'];
+            isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       memberships: {
         Row: {
           created_at: string;
@@ -833,7 +903,9 @@ export type Database = {
           content: string;
           conversation_id: string;
           created_at: string;
+          delivery_error: string | null;
           delivery_status: string;
+          external_id: string | null;
           id: string;
           org_id: string;
           task_id: string | null;
@@ -846,7 +918,9 @@ export type Database = {
           content: string;
           conversation_id: string;
           created_at?: string;
+          delivery_error?: string | null;
           delivery_status?: string;
+          external_id?: string | null;
           id?: string;
           org_id: string;
           task_id?: string | null;
@@ -858,7 +932,9 @@ export type Database = {
           content?: string;
           conversation_id?: string;
           created_at?: string;
+          delivery_error?: string | null;
           delivery_status?: string;
+          external_id?: string | null;
           id?: string;
           org_id?: string;
           task_id?: string | null;
@@ -1289,6 +1365,14 @@ export type Database = {
           task_id: string;
         }[];
       };
+      confirm_channel_verification: {
+        Args: { p_address: string; p_code: string };
+        Returns: {
+          channel_id: string;
+          org_id: string;
+          user_id: string;
+        }[];
+      };
       connection_secret_get: { Args: { p_connection_id: string }; Returns: string };
       connection_secret_set: {
         Args: { p_connection_id: string; p_secret: string };
@@ -1306,6 +1390,10 @@ export type Database = {
           p_edited_payload?: Json;
           p_note?: string;
         };
+        Returns: string;
+      };
+      decide_approval_as: {
+        Args: { p_approval_id: string; p_decision: string; p_note?: string; p_user_id: string };
         Returns: string;
       };
       hire_employee: {
@@ -1351,6 +1439,11 @@ export type Database = {
           title: string;
         }[];
       };
+      start_channel_verification: {
+        Args: { p_address: string; p_org_id: string };
+        Returns: string;
+      };
+      whatsapp_inbound_claim: { Args: { p_wa_message_id: string }; Returns: boolean };
     };
     Enums: {
       [_ in never]: never;

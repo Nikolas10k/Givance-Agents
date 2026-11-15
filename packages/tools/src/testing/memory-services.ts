@@ -30,6 +30,8 @@ export function createMemoryServices() {
   const documents: Array<{ id: string; orgId: string; title: string; chunks: string[] }> = [];
   const messages: Array<{ id: string; orgId: string; taskId: string; content: string }> = [];
   const autonomyPolicies = new Map<string, AutonomyLevel>();
+  const notices: Array<{ id: string; orgId: string; taskId: string | null; content: string }> = [];
+  let ownerChannel = true;
 
   const services: ToolServices = {
     approvals: {
@@ -169,12 +171,21 @@ export function createMemoryServices() {
         messages.push({ id, orgId, taskId, content });
         return { messageId: id };
       },
+      async notifyOwner(input) {
+        if (!ownerChannel) return null;
+        const id = randomUUID();
+        notices.push({ id, orgId: input.orgId, taskId: input.taskId, content: input.content });
+        return { messageId: id };
+      },
     },
   };
 
   return {
     services,
-    state: { approvals, executions, auditLog, artifacts, documents, messages },
+    state: { approvals, executions, auditLog, artifacts, documents, messages, notices },
+    setOwnerChannel(value: boolean) {
+      ownerChannel = value;
+    },
     setAutonomy(orgId: string, actionType: string, level: AutonomyLevel) {
       autonomyPolicies.set(`${orgId}:${actionType}`, level);
     },

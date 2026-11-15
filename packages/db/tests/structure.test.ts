@@ -76,6 +76,7 @@ describe('estrutura de segurança do schema public', () => {
       'create_task',
       'decide_approval',
       'search_knowledge',
+      'start_channel_verification',
     ]);
   });
 

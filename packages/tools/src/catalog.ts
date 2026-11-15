@@ -58,20 +58,10 @@ export const PLANNED_TOOLS: PlannedItem[] = [
     description: 'Propõe a alteração de um evento existente.',
   },
   { name: 'contatos_buscar', phase: '1d', description: 'Procura um contato pelo nome ou e-mail.' },
-  {
-    name: 'whatsapp_avisar_dono',
-    phase: '1b',
-    description: 'Manda um aviso curto para o WhatsApp do dono.',
-  },
 ];
 
 /** Tipos de ação previstos para as próximas etapas. */
 export const PLANNED_ACTIONS: PlannedItem[] = [
-  {
-    name: 'whatsapp.avisar_dono',
-    phase: '1b',
-    description: 'Aviso para o WhatsApp do próprio dono.',
-  },
   {
     name: 'instagram.publicar',
     phase: '1c',
