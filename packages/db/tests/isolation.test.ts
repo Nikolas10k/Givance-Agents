@@ -57,9 +57,13 @@ async function preencherTodasAsTabelas() {
       `insert into usage_ledger (org_id, period, employee_id, cost_usd) values ($1, date_trunc('month', now())::date, $2, 1)`,
       [org, employeeId],
     );
-    await db.query(
-      `insert into media_assets (org_id, storage_path, mime_type, source) values ($1, $2, 'image/jpeg', 'whatsapp')`,
+    const midia = await db.query<{ id: string }>(
+      `insert into media_assets (org_id, storage_path, mime_type, source) values ($1, $2, 'image/jpeg', 'whatsapp') returning id`,
       [org, `${org}/foto.jpg`],
+    );
+    await db.query(
+      `insert into social_posts (org_id, task_id, approval_id, format, caption, media_ids) values ($1, $2, $3, 'feed', 'Teste', array[$4::uuid])`,
+      [org, taskId, approvalId, midia.rows[0]!.id],
     );
   }
   // A Padaria não tem canal nem política de autonomia no seed.

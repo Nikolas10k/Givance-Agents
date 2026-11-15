@@ -18,15 +18,16 @@
     "@givance/agents": "workspace:*",
     "@givance/core": "workspace:*",
     "@givance/db": "workspace:*",
+    "@givance/integrations": "workspace:*",
     "@givance/tools": "workspace:*",
-    "zod": "^4.6.7",
-    "@givance/integrations": "workspace:*"
+    "sharp": "^0.34.5",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "tsup": "^9.0.0",
-    "tsx": "^4.23.15",
     "@modelcontextprotocol/sdk": "^1.32.2",
+    "@types/pg": "^8.23.1",
     "pg": "^8.23.1",
-    "@types/pg": "^8.23.1"
+    "tsup": "^9.0.0",
+    "tsx": "^4.23.15"
   }
 }

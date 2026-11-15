@@ -1,5 +1,5 @@
 import { redact, type AutonomyLevel, type JsonValue } from '@givance/core';
-import type { ActionPreview, ApprovalRecord, ToolServices } from '@givance/tools';
+import type { ActionPreview, ApprovalRecord, MediaInfo, ToolServices } from '@givance/tools';
 import {
   assertOk,
   DbError,
@@ -30,9 +30,110 @@ function toApproval(row: Tables<'approvals'>): ApprovalRecord {
   };
 }
 
-/** Implementação de ToolServices sobre o Supabase (chave secreta, sempre filtrando por org_id). */
-export function createSupabaseToolServices(db: TypedClient): ToolServices {
+function mediaKind(mimeType: string): MediaInfo['kind'] {
+  if (mimeType.startsWith('image/')) return 'imagem';
+  if (mimeType.startsWith('video/')) return 'video';
+  return 'outro';
+}
+
+function toMediaInfo(row: Tables<'media_assets'>): MediaInfo {
   return {
+    id: row.id,
+    kind: mediaKind(row.mime_type),
+    mimeType: row.mime_type,
+    width: row.width,
+    height: row.height,
+    durationSeconds: row.duration_seconds === null ? null : Number(row.duration_seconds),
+    caption: row.caption,
+    source: row.source as MediaInfo['source'],
+    createdAt: row.created_at,
+  };
+}
+
+/** Instagram sem worker configurado: nada conectado. */
+const instagramIndisponivel: ToolServices['instagram'] = {
+  async account() {
+    return null;
+  },
+  async recentPosts() {
+    return [];
+  },
+  async saveDraft() {},
+  async markScheduled() {
+    return false;
+  },
+  async publish() {
+    throw new Error('Instagram não está configurado neste worker.');
+  },
+};
+
+/**
+ * Implementação de ToolServices sobre o Supabase (chave secreta, sempre filtrando por org_id).
+ * O Instagram fala com uma API externa e fica a cargo de quem chama (o worker).
+ */
+export function createSupabaseToolServices(
+  db: TypedClient,
+  extra: { instagram?: ToolServices['instagram'] } = {},
+): ToolServices {
+  return {
+    instagram: extra.instagram ?? instagramIndisponivel,
+    media: {
+      async list(orgId, options) {
+        let query = db.from('media_assets').select('*').eq('org_id', orgId);
+        if (options.ids) {
+          if (options.ids.length === 0) return [];
+          query = query.in('id', options.ids);
+        } else {
+          query = query
+            .order('created_at', { ascending: false })
+            .limit(Math.min(Math.max(options.limit ?? 10, 1), 50));
+        }
+        const rows = unwrap('mídia: listar', await query);
+        return rows.map(toMediaInfo);
+      },
+      async forTask(orgId, taskId) {
+        const task = unwrapMaybe(
+          'mídia: tarefa',
+          await db.from('tasks').select('input').eq('org_id', orgId).eq('id', taskId).maybeSingle(),
+        );
+        const ids = new Set<string>();
+        const input = (task?.input ?? {}) as { midias?: unknown };
+        if (Array.isArray(input.midias)) {
+          for (const id of input.midias) if (typeof id === 'string') ids.add(id);
+        }
+        const mensagens = unwrap(
+          'mídia: mensagens da tarefa',
+          await db
+            .from('messages')
+            .select('attachments')
+            .eq('org_id', orgId)
+            .eq('task_id', taskId)
+            .eq('author', 'dono'),
+        );
+        for (const m of mensagens) {
+          for (const a of (m.attachments ?? []) as Array<{ media_id?: unknown }>) {
+            if (typeof a?.media_id === 'string') ids.add(a.media_id);
+          }
+        }
+        return [...ids];
+      },
+    },
+    company: {
+      async contentPolicy(orgId) {
+        const perfil = unwrapMaybe(
+          'empresa: regras de conteúdo',
+          await db
+            .from('company_profiles')
+            .select('do_not_say, regulated_sector')
+            .eq('org_id', orgId)
+            .maybeSingle(),
+        );
+        return {
+          doNotSay: perfil?.do_not_say ?? [],
+          regulatedSector: perfil?.regulated_sector ?? null,
+        };
+      },
+    },
     approvals: {
       async findByIdempotencyKey(orgId, key) {
         const row = unwrapMaybe(

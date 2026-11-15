@@ -13,6 +13,7 @@ import { createRoutineFireHandler, scheduleUnscheduledRoutines } from './handler
 import { createTaskRunHandler } from './handlers/task-run';
 import { createWhatsAppInboundHandler } from './handlers/whatsapp-inbound';
 import { createWhatsAppOutboundHandler } from './handlers/whatsapp-outbound';
+import { createInstagramService, refreshInstagramTokens } from './instagram/service';
 import { createLogger } from './logger';
 import { taskRunMessage } from './messages';
 
@@ -28,7 +29,9 @@ async function main() {
   });
   const deps: WorkerDeps = {
     db,
-    services: createSupabaseToolServices(db),
+    services: createSupabaseToolServices(db, {
+      instagram: createInstagramService({ db, graphVersion: config.INSTAGRAM_GRAPH_VERSION }),
+    }),
     registry: createDefaultRegistry(),
     contentRoot: resolveContentRoot(),
     ...(config.ANTHROPIC_API_KEY ? { apiKey: config.ANTHROPIC_API_KEY } : {}),
@@ -129,6 +132,17 @@ async function main() {
   await agendar();
   const agendador = setInterval(agendar, 60_000);
 
+  const renovarTokens = async () => {
+    try {
+      const r = await refreshInstagramTokens(db);
+      if (r.renovados + r.expirados > 0) logger.info('Tokens do Instagram', r);
+    } catch (error) {
+      logger.error('Falha ao renovar tokens do Instagram', { erro: errorMessage(error) });
+    }
+  };
+  void renovarTokens();
+  const renovador = setInterval(renovarTokens, 6 * 3_600_000);
+
   consumers.forEach((c) => c.start());
   const startedAt = new Date().toISOString();
   const health = createServer((req, res) => {
@@ -149,6 +163,7 @@ async function main() {
     encerrando = true;
     logger.info('Encerrando worker', { sinal });
     clearInterval(agendador);
+    clearInterval(renovador);
     await Promise.all(consumers.map((c) => c.stop(60_000)));
     health.close();
     process.exit(0);

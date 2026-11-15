@@ -19,6 +19,11 @@ const schema = z.object({
   WHATSAPP_TEMPLATE_AVISO: z.string().default('givance_aviso'),
   WHATSAPP_TEMPLATE_CONFIRMACAO: z.string().default('givance_confirmacao'),
   WHATSAPP_TEMPLATE_IDIOMA: z.string().default('pt_BR'),
+  /** Versão da API do Instagram (graph.instagram.com). Os tokens vêm das conexões no Vault. */
+  INSTAGRAM_GRAPH_VERSION: z
+    .string()
+    .regex(/^v\d+\.\d+$/)
+    .default('v23.0'),
 });
 
 export type WorkerConfig = z.infer<typeof schema>;

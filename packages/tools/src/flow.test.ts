@@ -64,7 +64,15 @@ function contexto(permissions: Partial<RolePermissions> = {}, tainted = false) {
     },
     run: createRunState(tainted),
     agent: 'orquestrador',
-    permissions: { acoes: {}, acoes_proibidas: [], ...permissions },
+    permissions: {
+      acoes: {
+        'memoria.registrar': 'confirmar',
+        'teste.pagar': 'automatico',
+        'teste.instavel': 'automatico',
+      },
+      acoes_proibidas: [],
+      ...permissions,
+    },
     services: memory.services,
     registry,
   };
@@ -157,6 +165,17 @@ describe('pedido de ação', () => {
         payload: { titulo: 'abc', conteudo: 'conteúdo suficiente' },
       }),
     ).toMatchObject({ status: 'proibida' });
+  });
+
+  it('ação fora das permissões do cargo é recusada e não aparece na descrição', async () => {
+    const { ctx, registry, memory } = contexto({ acoes: { 'memoria.registrar': 'confirmar' } });
+    expect(await requestAction(ctx, { type: 'teste.instavel', payload: { n: 1 } })).toMatchObject({
+      status: 'proibida',
+    });
+    expect(memory.state.approvals).toHaveLength(0);
+    const descricao = describeActions(registry, ctx.permissions);
+    expect(descricao).toContain('memoria.registrar');
+    expect(descricao).not.toContain('teste.instavel');
   });
 });
 

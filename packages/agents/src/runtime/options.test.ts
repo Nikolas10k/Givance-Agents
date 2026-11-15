@@ -92,8 +92,17 @@ describe('opções do Agent SDK', () => {
     expect(social.background).toBe(false);
     expect(social.prompt).toContain('social media');
     expect(social.prompt).toContain('Clínica Exemplo');
-    expect(social.tools).toEqual(['mcp__givance__memoria_buscar', 'mcp__givance__salvar_artefato']);
-    expect(plan.missing.map((m) => m.tool)).toContain('instagram_preparar_post');
+    expect(social.tools).toEqual([
+      'mcp__givance__instagram_insights',
+      'mcp__givance__instagram_listar_posts',
+      'mcp__givance__instagram_preparar_post',
+      'mcp__givance__memoria_buscar',
+      'mcp__givance__midia_listar',
+      'mcp__givance__salvar_artefato',
+    ]);
+    // Ferramentas de etapas futuras continuam de fora (ex.: Gmail na 1e).
+    expect(plan.missing.map((m) => m.tool)).toContain('gmail_ler');
+    expect(plan.missing.map((m) => m.tool)).not.toContain('instagram_preparar_post');
     expect(options.systemPrompt).toHaveLength(3);
   });
 

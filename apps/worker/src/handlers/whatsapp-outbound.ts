@@ -88,6 +88,24 @@ export function createWhatsAppOutboundHandler(deps: WorkerDeps) {
     );
   }
 
+  /** Primeira foto da prévia (ex.: post do Instagram) como imagem do cabeçalho dos botões. */
+  async function imagemDaPrevia(orgId: string, ids: unknown): Promise<string | null> {
+    const primeiro = Array.isArray(ids) && typeof ids[0] === 'string' ? ids[0] : null;
+    if (!primeiro) return null;
+    const asset = unwrapMaybe(
+      'prévia: mídia',
+      await db
+        .from('media_assets')
+        .select('storage_path, mime_type')
+        .eq('org_id', orgId)
+        .eq('id', primeiro)
+        .maybeSingle(),
+    );
+    if (!asset || !asset.mime_type.startsWith('image/')) return null;
+    const assinada = await db.storage.from('midia').createSignedUrl(asset.storage_path, 3600);
+    return assinada.error ? null : assinada.data.signedUrl;
+  }
+
   /** Fora de uma conversa ativa, respeita o horário de silêncio do dono. */
   function adiarSeSilencio(canal: Canal, timezone: string, now: Date) {
     if (activeConversation(canal.last_inbound_at, now)) return;
@@ -205,6 +223,7 @@ export function createWhatsAppOutboundHandler(deps: WorkerDeps) {
       resumo?: string;
       campos?: Array<{ rotulo: string; valor: string }>;
       botao_aprovar?: string;
+      midia_ids?: string[];
     };
     const titulo = preview.titulo ?? 'Ação aguardando sua decisão';
 
@@ -232,8 +251,10 @@ export function createWhatsAppOutboundHandler(deps: WorkerDeps) {
         for (const campo of preview.campos ?? []) linhas.push(`${campo.rotulo}: ${campo.valor}`);
         if (ap.reason) linhas.push('', `Motivo: ${ap.reason}`);
         linhas.push('', `Vale até ${formatarExpiracao(ap.expires_at, timezone)}.`);
+        const imagem = await imagemDaPrevia(orgId, preview.midia_ids);
         enviado = await wa.client.sendButtons(canal.address_e164, {
           body: linhas.join('\n'),
+          ...(imagem ? { headerImageUrl: imagem } : {}),
           buttons: [
             { id: approvalButtonId(ap.id, 'aprovar'), title: preview.botao_aprovar ?? 'Aprovar' },
             { id: approvalButtonId(ap.id, 'editar'), title: 'Editar' },

@@ -823,38 +823,47 @@ export type Database = {
           caption: string | null;
           created_at: string;
           created_by: string | null;
+          duration_seconds: number | null;
           external_id: string | null;
+          height: number | null;
           id: string;
           mime_type: string;
           org_id: string;
           size_bytes: number | null;
           source: string;
           storage_path: string;
+          width: number | null;
         };
         ComputedFields: never;
         Insert: {
           caption?: string | null;
           created_at?: string;
           created_by?: string | null;
+          duration_seconds?: number | null;
           external_id?: string | null;
+          height?: number | null;
           id?: string;
           mime_type: string;
           org_id: string;
           size_bytes?: number | null;
           source: string;
           storage_path: string;
+          width?: number | null;
         };
         Update: {
           caption?: string | null;
           created_at?: string;
           created_by?: string | null;
+          duration_seconds?: number | null;
           external_id?: string | null;
+          height?: number | null;
           id?: string;
           mime_type?: string;
           org_id?: string;
           size_bytes?: number | null;
           source?: string;
           storage_path?: string;
+          width?: number | null;
         };
         Relationships: [
           {
@@ -1177,6 +1186,92 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'organizations';
             referencedColumns: ['id'];
+          },
+        ];
+      };
+      social_posts: {
+        Row: {
+          approval_id: string;
+          caption: string;
+          channel: string;
+          created_at: string;
+          crop: string;
+          error: string | null;
+          format: string;
+          id: string;
+          ig_container_id: string | null;
+          ig_media_id: string | null;
+          media_ids: string[];
+          org_id: string;
+          permalink: string | null;
+          published_at: string | null;
+          scheduled_at: string | null;
+          status: string;
+          task_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          approval_id: string;
+          caption?: string;
+          channel?: string;
+          created_at?: string;
+          crop?: string;
+          error?: string | null;
+          format: string;
+          id?: string;
+          ig_container_id?: string | null;
+          ig_media_id?: string | null;
+          media_ids: string[];
+          org_id: string;
+          permalink?: string | null;
+          published_at?: string | null;
+          scheduled_at?: string | null;
+          status?: string;
+          task_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          approval_id?: string;
+          caption?: string;
+          channel?: string;
+          created_at?: string;
+          crop?: string;
+          error?: string | null;
+          format?: string;
+          id?: string;
+          ig_container_id?: string | null;
+          ig_media_id?: string | null;
+          media_ids?: string[];
+          org_id?: string;
+          permalink?: string | null;
+          published_at?: string | null;
+          scheduled_at?: string | null;
+          status?: string;
+          task_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'social_posts_approval_id_org_id_fkey';
+            columns: ['approval_id', 'org_id'];
+            isOneToOne: false;
+            referencedRelation: 'approvals';
+            referencedColumns: ['id', 'org_id'];
+          },
+          {
+            foreignKeyName: 'social_posts_org_id_fkey';
+            columns: ['org_id'];
+            isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'social_posts_task_id_org_id_fkey';
+            columns: ['task_id', 'org_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id', 'org_id'];
           },
         ];
       };

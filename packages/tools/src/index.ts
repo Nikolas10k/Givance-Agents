@@ -1,11 +1,14 @@
+export * from './actions/instagram-publicar';
 export * from './actions/memoria-registrar';
 export { whatsappAvisarDono as whatsappAvisarDonoAction } from './actions/whatsapp-avisar-dono';
 export * from './autonomy-engine';
 export * from './catalog';
+export * from './content-policy';
 export * from './default-registry';
 export * from './definitions';
 export * from './execute-action';
 export * from './idempotency';
+export * from './instagram-tools';
 export * from './registry';
 export * from './request-action';
 export * from './system-tools';

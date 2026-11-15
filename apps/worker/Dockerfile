@@ -15,6 +15,7 @@ COPY packages/core/package.json packages/core/
 COPY packages/db/package.json packages/db/
 COPY packages/tools/package.json packages/tools/
 COPY packages/agents/package.json packages/agents/
+COPY packages/integrations/package.json packages/integrations/
 # O secret "ca" é opcional: só para builds atrás de proxy com certificado próprio
 # (docker build --secret id=ca,src=/caminho/ca.crt ...). Não fica gravado na imagem.
 RUN --mount=type=secret,id=ca,required=false \

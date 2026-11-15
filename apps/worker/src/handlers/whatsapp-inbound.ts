@@ -11,6 +11,7 @@ import { parseApprovalButtonId, parseWebhook, type InboundMessage } from '@givan
 import { PermanentError } from '../consumer';
 import type { WhatsAppDeps, WorkerDeps } from '../deps';
 import { parseMessage, whatsappInboundMessage } from '../messages';
+import { imageInfo } from '../instagram/imagem';
 
 const CODIGO = /^\s*(?:givance\s*)?(\d{6})\s*$/i;
 
@@ -192,6 +193,7 @@ export function createWhatsAppInboundHandler(deps: WorkerDeps) {
       .from('midia')
       .upload(caminho, media.data, { contentType: media.mimeType });
     if (upload.error) throw new Error(`Storage: ${upload.error.message}`);
+    const dimensoes = media.mimeType.startsWith('image/') ? await imageInfo(media.data) : null;
     const linha = unwrap(
       'mídia: registrar',
       await db
@@ -205,6 +207,7 @@ export function createWhatsAppInboundHandler(deps: WorkerDeps) {
           external_id: mediaId,
           caption: caption ?? null,
           created_by: userId,
+          ...(dimensoes ? { width: dimensoes.width, height: dimensoes.height } : {}),
         })
         .select('id')
         .single(),

@@ -90,7 +90,7 @@ export async function executeApprovedAction(deps: {
 
   let payload = parsed.data;
   if (definition.guard) {
-    const guarded = await definition.guard({ task, services }, payload);
+    const guarded = await definition.guard({ task, services, phase: 'execucao' }, payload);
     if (!guarded.ok) {
       return fail(`Barrada pelas regras de segurança: ${guarded.problems.join('; ')}`, false);
     }

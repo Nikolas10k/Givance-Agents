@@ -115,6 +115,48 @@ export interface ArtifactRecord {
   createdAt: string;
 }
 
+/** Imagem ou vídeo do banco de mídia da empresa. */
+export interface MediaInfo {
+  id: string;
+  kind: 'imagem' | 'video' | 'outro';
+  mimeType: string;
+  width: number | null;
+  height: number | null;
+  durationSeconds: number | null;
+  caption: string | null;
+  source: 'whatsapp' | 'upload';
+  createdAt: string;
+}
+
+/** Regras de conteúdo da empresa (vêm do perfil). */
+export interface ContentPolicy {
+  doNotSay: string[];
+  regulatedSector: string | null;
+}
+
+export type InstagramFormat = 'feed' | 'carrossel' | 'reels' | 'story';
+export type InstagramCrop = '1:1' | '4:5' | '9:16' | 'original';
+
+/** Post como aprovado pelo dono (payload da ação instagram.publicar). */
+export interface InstagramPostRequest {
+  formato: InstagramFormat;
+  legenda: string;
+  midia_ids: string[];
+  recorte: InstagramCrop;
+  agendar_para?: string | undefined;
+}
+
+export interface InstagramPostSummary {
+  id: string;
+  tipo: string;
+  legenda: string | null;
+  data: string | null;
+  link: string | null;
+  curtidas: number | null;
+  comentarios: number | null;
+  metricas?: Partial<Record<string, number>>;
+}
+
 /**
  * Dependências das ferramentas e ações. O pacote @givance/db implementa estas interfaces
  * sobre o Supabase; os testes usam a implementação em memória (./testing).
@@ -176,6 +218,34 @@ export interface ToolServices {
       taskId: string | null;
       content: string;
     }): Promise<{ messageId: string } | null>;
+  };
+  media: {
+    /** Mídias da empresa, das mais recentes para as mais antigas (ou só as dos ids pedidos). */
+    list(orgId: string, options: { limit?: number; ids?: string[] }): Promise<MediaInfo[]>;
+    /** Ids das mídias anexadas pelo dono a esta tarefa. */
+    forTask(orgId: string, taskId: string): Promise<string[]>;
+  };
+  company: {
+    contentPolicy(orgId: string): Promise<ContentPolicy>;
+  };
+  instagram: {
+    /** Conta conectada e ativa, ou null. */
+    account(orgId: string): Promise<{ username: string; igUserId: string } | null>;
+    recentPosts(
+      orgId: string,
+      options: { limit: number; withInsights?: boolean },
+    ): Promise<InstagramPostSummary[]>;
+    /** Registra (ou mantém) o post ligado a uma aprovação de instagram.publicar. */
+    saveDraft(input: { orgId: string; taskId: string; approvalId: string }): Promise<void>;
+    /** Marca o post como agendado. Devolve true só na primeira vez. */
+    markScheduled(orgId: string, approvalId: string, at: string): Promise<boolean>;
+    /** Publica o post aprovado. Idempotente por aprovação: não publica duas vezes. */
+    publish(input: {
+      orgId: string;
+      taskId: string;
+      approvalId: string;
+      post: InstagramPostRequest;
+    }): Promise<{ mediaId: string; permalink: string | null }>;
   };
 }
 

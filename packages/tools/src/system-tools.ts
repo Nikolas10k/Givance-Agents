@@ -2,7 +2,7 @@ import { redact, type JsonValue } from '@givance/core';
 import { z } from 'zod';
 import { defineTool, type ToolDefinition } from './definitions';
 import type { Registry } from './registry';
-import { requestAction } from './request-action';
+import { actionAllowedForRole, requestAction } from './request-action';
 import type { RolePermissions } from './types';
 
 /**
@@ -161,7 +161,7 @@ export const whatsappAvisarDono = defineTool({
 export function describeActions(registry: Registry, permissions: RolePermissions): string {
   const linhas: string[] = [];
   for (const action of registry.implementedActions()) {
-    if (action.destructive || permissions.acoes_proibidas.includes(action.type)) {
+    if (!actionAllowedForRole(action, permissions)) {
       continue;
     }
     const schema = JSON.stringify(z.toJSONSchema(action.payload));

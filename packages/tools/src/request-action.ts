@@ -1,6 +1,7 @@
 import { formatZodIssues, redact, type AutonomyLevel, type JsonValue } from '@givance/core';
 import { resolveAutonomy } from './autonomy-engine';
-import type { ToolCallContext } from './definitions';
+import type { ActionDefinition, ToolCallContext } from './definitions';
+import type { RolePermissions } from './types';
 import { actionIdempotencyKey } from './idempotency';
 
 export type RequestActionResult =
@@ -13,6 +14,20 @@ export type RequestActionResult =
       approvalId: string;
       level: AutonomyLevel;
     };
+
+/**
+ * Só as ações listadas nas permissões do cargo podem ser pedidas. A exceção são as que só
+ * afetam o próprio dono (ex.: aviso no WhatsApp dele), liberadas para todos os cargos.
+ */
+export function actionAllowedForRole(
+  definition: Pick<ActionDefinition, 'type' | 'selfDirected' | 'destructive'>,
+  permissions: RolePermissions,
+): boolean {
+  if (definition.destructive || permissions.acoes_proibidas.includes(definition.type)) {
+    return false;
+  }
+  return definition.selfDirected === true || definition.type in permissions.acoes;
+}
 
 /**
  * Um agente propõe uma ação. Nada externo acontece aqui: a ação é validada, passa pelos
@@ -43,7 +58,10 @@ export async function requestAction(
 
   let payload = parsed.data;
   if (definition.guard) {
-    const guarded = await definition.guard({ task: ctx.task, services: ctx.services }, payload);
+    const guarded = await definition.guard(
+      { task: ctx.task, services: ctx.services, phase: 'pedido' },
+      payload,
+    );
     if (!guarded.ok) {
       return {
         status: 'invalida',
@@ -52,6 +70,23 @@ export async function requestAction(
       };
     }
     payload = guarded.payload;
+  }
+
+  if (!actionAllowedForRole(definition, ctx.permissions)) {
+    await ctx.services.audit.log({
+      orgId: ctx.task.orgId,
+      actorType: 'agente',
+      actorId: ctx.agent,
+      action: 'acao.proibida',
+      target: definition.type,
+      reason: 'Ação fora das permissões do cargo',
+      taskId: ctx.task.taskId,
+      runId: ctx.task.runId,
+    });
+    return {
+      status: 'proibida',
+      message: `Este funcionário não tem permissão para a ação ${definition.type}.`,
+    };
   }
 
   const orgLevel = await ctx.services.autonomy.getLevel(ctx.task.orgId, definition.type);

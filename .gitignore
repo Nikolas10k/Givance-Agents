@@ -19,3 +19,4 @@ supabase/.branches/
 # sistema
 .DS_Store
 *.log
+apps/web/AGENTS.md

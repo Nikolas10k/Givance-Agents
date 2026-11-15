@@ -46,6 +46,8 @@ export type GuardResult<Payload> =
 export interface ActionGuardContext {
   task: TaskContext;
   services: ToolServices;
+  /** "pedido": o agente está pedindo a ação; "execucao": o worker vai executá-la. */
+  phase: 'pedido' | 'execucao';
 }
 
 export interface ActionExecuteContext {
@@ -87,6 +89,20 @@ export interface ActionDefinition<Payload extends z.ZodType = z.ZodType> {
     payload: z.infer<Payload>,
   ): Promise<GuardResult<z.infer<Payload>>>;
   preview(payload: z.infer<Payload>): ActionPreview;
+  /**
+   * Horário mínimo de execução (ex.: post agendado). Antes dele, o worker segura a ação na
+   * fila, já aprovada, sem abrir tentativa.
+   */
+  notBefore?(payload: z.infer<Payload>): Date | null;
+  /**
+   * Chamado quando a ação aprovada fica esperando o horário. Devolve true na primeira vez
+   * (para o worker liberar a tarefa e o orquestrador confirmar o agendamento ao dono).
+   */
+  onScheduled?(
+    ctx: { task: TaskContext; services: ToolServices; approvalId: string },
+    payload: z.infer<Payload>,
+    at: Date,
+  ): Promise<boolean>;
   execute(ctx: ActionExecuteContext, payload: z.infer<Payload>): Promise<ActionOutcome>;
 }
 

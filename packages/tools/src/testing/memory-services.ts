@@ -4,7 +4,11 @@ import type {
   ApprovalRecord,
   ArtifactRecord,
   AuditEntry,
+  ContentPolicy,
+  InstagramPostRequest,
+  InstagramPostSummary,
   KnowledgeHit,
+  MediaInfo,
   ToolServices,
 } from '../types';
 
@@ -32,6 +36,16 @@ export function createMemoryServices() {
   const autonomyPolicies = new Map<string, AutonomyLevel>();
   const notices: Array<{ id: string; orgId: string; taskId: string | null; content: string }> = [];
   let ownerChannel = true;
+  const media: Array<MediaInfo & { orgId: string; taskId?: string }> = [];
+  let contentPolicy: ContentPolicy = { doNotSay: [], regulatedSector: null };
+  let instagramAccount: { username: string; igUserId: string } | null = {
+    username: 'empresa_teste',
+    igUserId: '1789',
+  };
+  const instagramPosts: InstagramPostSummary[] = [];
+  const drafts: Array<{ orgId: string; taskId: string; approvalId: string; scheduledAt?: string }> =
+    [];
+  const published: Array<{ orgId: string; approvalId: string; post: InstagramPostRequest }> = [];
 
   const services: ToolServices = {
     approvals: {
@@ -178,11 +192,89 @@ export function createMemoryServices() {
         return { messageId: id };
       },
     },
+    media: {
+      async list(orgId, options) {
+        const daEmpresa = media.filter((m) => m.orgId === orgId);
+        if (options.ids) return daEmpresa.filter((m) => options.ids!.includes(m.id));
+        return [...daEmpresa].reverse().slice(0, options.limit ?? 10);
+      },
+      async forTask(orgId, taskId) {
+        return media.filter((m) => m.orgId === orgId && m.taskId === taskId).map((m) => m.id);
+      },
+    },
+    company: {
+      async contentPolicy() {
+        return contentPolicy;
+      },
+    },
+    instagram: {
+      async account() {
+        return instagramAccount;
+      },
+      async recentPosts(_orgId, options) {
+        return instagramPosts.slice(0, options.limit);
+      },
+      async saveDraft(input) {
+        if (!drafts.some((d) => d.approvalId === input.approvalId)) drafts.push({ ...input });
+      },
+      async markScheduled(_orgId, approvalId, at) {
+        const draft = drafts.find((d) => d.approvalId === approvalId);
+        if (!draft || draft.scheduledAt) return false;
+        draft.scheduledAt = at;
+        return true;
+      },
+      async publish(input) {
+        const existente = published.find((p) => p.approvalId === input.approvalId);
+        if (!existente)
+          published.push({ orgId: input.orgId, approvalId: input.approvalId, post: input.post });
+        const n = published.findIndex((p) => p.approvalId === input.approvalId) + 1;
+        return { mediaId: `ig-${n}`, permalink: `https://www.instagram.com/p/teste${n}/` };
+      },
+    },
   };
 
   return {
     services,
-    state: { approvals, executions, auditLog, artifacts, documents, messages, notices },
+    state: {
+      approvals,
+      executions,
+      auditLog,
+      artifacts,
+      documents,
+      messages,
+      notices,
+      media,
+      drafts,
+      published,
+      instagramPosts,
+    },
+    addMedia(
+      orgId: string,
+      input: Partial<MediaInfo> & { kind: MediaInfo['kind'] },
+      taskId?: string,
+    ): string {
+      const id = randomUUID();
+      media.push({
+        id,
+        orgId,
+        mimeType: input.kind === 'video' ? 'video/mp4' : 'image/jpeg',
+        width: 1080,
+        height: 1350,
+        durationSeconds: input.kind === 'video' ? 20 : null,
+        caption: null,
+        source: 'whatsapp',
+        createdAt: new Date().toISOString(),
+        ...input,
+        ...(taskId ? { taskId } : {}),
+      });
+      return id;
+    },
+    setContentPolicy(policy: ContentPolicy) {
+      contentPolicy = policy;
+    },
+    setInstagramAccount(account: { username: string; igUserId: string } | null) {
+      instagramAccount = account;
+    },
     setOwnerChannel(value: boolean) {
       ownerChannel = value;
     },

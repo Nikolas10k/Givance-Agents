@@ -21,6 +21,9 @@ export default async function PainelLayout({ children }: { children: ReactNode }
               <Link href="/whatsapp" className="rounded-md px-2 py-1 hover:bg-fundo">
                 WhatsApp
               </Link>
+              <Link href="/instagram" className="rounded-md px-2 py-1 hover:bg-fundo">
+                Instagram
+              </Link>
             </nav>
             {session.orgs.length > 1 ? (
               <form action={switchOrg} className="flex items-center gap-2">

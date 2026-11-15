@@ -439,7 +439,7 @@ export async function taskHistory(
     await db
       .from('approvals')
       .select(
-        'id, action_type, status, decision_note, payload, edited_payload, created_at, action_executions(status, error, result_redacted, attempt)',
+        'id, action_type, status, decision_note, payload, edited_payload, created_at, action_executions(status, error, result_redacted, attempt), social_posts(status, scheduled_at)',
       )
       .eq('org_id', orgId)
       .eq('task_id', taskId)
@@ -468,6 +468,12 @@ export async function taskHistory(
         linha += ` — ${resumoJson(ultima.result_redacted, 300)}`;
       if (ultima.status === 'falhou' && ultima.error) linha += ` — ${ultima.error}`;
     }
+    const posts = approval.social_posts as unknown;
+    const post = (Array.isArray(posts) ? posts[0] : posts) as
+      { status: string; scheduled_at: string | null } | null | undefined;
+    if (post?.status === 'agendado' && post.scheduled_at) {
+      linha += `; post agendado para ${post.scheduled_at} (o sistema publica sozinho no horário e avisa o dono com o link)`;
+    }
     linhas.push(linha);
   }
   return linhas.join('\n');
@@ -483,11 +489,25 @@ export async function purgeOrganization(
   confirmSlug: string,
 ): Promise<void> {
   const bucket = db.storage.from('midia');
-  for (;;) {
-    const { data, error } = await bucket.list(orgId, { limit: 100 });
-    if (error) throw new Error(`Storage: ${error.message}`);
-    if (!data || data.length === 0) break;
-    const removidos = await bucket.remove(data.map((f) => `${orgId}/${f.name}`));
+  // A pasta da empresa tem subpastas (ex.: fotos recortadas para o Instagram). A listagem do
+  // Storage devolve subpastas como itens sem id: desce nelas e apaga só arquivos.
+  const pendentes = [orgId];
+  const arquivos: string[] = [];
+  while (pendentes.length > 0) {
+    const pasta = pendentes.pop()!;
+    for (let offset = 0; ; offset += 100) {
+      const { data, error } = await bucket.list(pasta, { limit: 100, offset });
+      if (error) throw new Error(`Storage: ${error.message}`);
+      for (const item of data ?? []) {
+        const caminho = `${pasta}/${item.name}`;
+        if (item.id === null) pendentes.push(caminho);
+        else arquivos.push(caminho);
+      }
+      if (!data || data.length < 100) break;
+    }
+  }
+  for (let i = 0; i < arquivos.length; i += 100) {
+    const removidos = await bucket.remove(arquivos.slice(i, i + 100));
     if (removidos.error) throw new Error(`Storage: ${removidos.error.message}`);
   }
   assertOk(
