@@ -2,7 +2,9 @@
 
 > Plataforma que vende **"funcionários de IA"** para PMEs brasileiras. Cada funcionário é um time de agentes coordenado por um orquestrador, que executa tarefas reais e presta contas como um colaborador humano.
 >
-> **Status:** proposta para aprovação. Nenhum código foi escrito ainda. A seção [0. Decisões que preciso de você](#0-decisões-que-preciso-de-você) lista o que precisa ser fechado antes da Fase 1.
+> **Status:** proposta para aprovação, **revisão 2**. Nenhum código foi escrito ainda. A seção [0. Decisões que preciso de você](#0-decisões-que-preciso-de-você) lista o que precisa ser fechado antes da Fase 1.
+>
+> **O que mudou na revisão 2:** além do tráfego pago, o sistema agora cobre **e-mail** (triagem e resposta), **agenda** (marcar reuniões), **avisos do que é importante no WhatsApp** e **posts no Instagram por comando**. O WhatsApp virou o canal principal de comando. Novos agentes: `social`, `triagem` e `secretaria`. Entram níveis de autonomia por tipo de ação (8.2) e um cargo combinado, o **Braço Direito**. O roadmap foi reordenado: você é o primeiro usuário.
 
 ---
 
@@ -33,12 +35,16 @@ Para cada item deixei uma recomendação. Se você concordar com todas, basta re
 | # | Decisão | Recomendação | Por quê |
 |---|---------|--------------|---------|
 | D1 | **Onde rodam os agentes** | Um serviço **worker** Node separado (Fly.io ou Railway), não dentro da Vercel | O Claude Agent SDK roda o harness do Claude Code como processo de longa duração; tarefas de agente duram minutos e não cabem bem em funções serverless. A Vercel fica só com o Next.js. |
-| D2 | **Modelos por agente** | Começar com `claude-opus-5-5` em todos, com o modelo configurável por agente no YAML do cargo | Qualidade primeiro no MVP. Depois medimos custo por tarefa e você decide se troca especialistas simples (ex.: `analista` lendo métricas) por Sonnet 5.5 ou Haiku 5.5 para melhorar margem. |
+| D2 | **Modelos por agente** | Começar com `claude-opus-5-5` em todos, com o modelo configurável por agente no YAML do cargo | Qualidade primeiro no MVP. Depois medimos custo por tarefa e você decide se troca especialistas simples (ex.: `analista` lendo métricas) por Sonnet 5.5 ou Haiku 5.5 para melhorar margem. A triagem de e-mail roda o dia inteiro e é a principal candidata a um modelo mais barato. |
 | D3 | **Embeddings para o RAG** | Voyage AI (`voyage-3.5`, 1024 dimensões) | A Anthropic não oferece endpoint de embeddings; a Voyage é a parceira recomendada e tem bom desempenho em português. Alternativa: OpenAI `text-embedding-3-small`. |
-| D4 | **Geração de imagens (agente `criativo`)** | Na Fase 1: o `criativo` gera **briefing + variações de texto sobre imagem** e usa imagens que o cliente envia. Geração por modelo de imagem entra como provedor plugável depois | Claude não gera imagens. Evita travar o MVP escolhendo provedor agora. |
-| D5 | **Aprovação pelo WhatsApp do dono** | Fase 1: aprovação no painel + aviso por e-mail. Aprovação por botões no WhatsApp entra na Fase 2, junto com a WhatsApp Cloud API | Mensagens iniciadas pela empresa no WhatsApp exigem template aprovado pela Meta e um número da Givance verificado; isso é o trabalho da Fase 2 de qualquer jeito. |
-| D6 | **Modelo de app na Meta** | Um único app da Givance (Tech Provider / parceiro), com App Review para as permissões de anúncios; cada cliente conecta via OAuth (Facebook Login for Business) | Cliente não precisa criar app próprio. Custo: App Review e verificação da empresa Givance levam semanas, então começam já na Fase 1. |
+| D4 | **De onde vêm as imagens dos posts e anúncios** | Fase 1: a imagem ou o vídeo que você manda no WhatsApp ou no painel, ou o banco de mídia da empresa. O `criativo` escolhe, recorta nos formatos e escreve o texto. Depois: geração por modelo de imagem ou templates do Canva como provedor plugável | Claude não gera imagens, e o Instagram exige mídia pronta. Assim o comando "posta isso" funciona já, sem escolher provedor agora. |
+| D5 | **WhatsApp como canal principal** | Entra já na Fase 1: um número da Givance na WhatsApp Cloud API recebe seus comandos, manda prévias com botões (Publicar / Editar / Cancelar) e encaminha o que for importante | É por onde você quer mandar comandos e receber avisos. Mensagens iniciadas pelo sistema fora da janela de 24h exigem template aprovado pela Meta (categoria utilidade) e são cobradas por mensagem. |
+| D6 | **Modelo de app na Meta** | Um único app da Givance (Tech Provider / parceiro), com App Review para as permissões de anúncios, Instagram e WhatsApp; cada cliente conecta via OAuth (Facebook Login for Business) | Cliente não precisa criar app próprio. Custo: App Review e verificação da empresa Givance levam semanas, então começam já na Fase 1. |
 | D7 | **Gestor de pacotes / monorepo** | pnpm + Turborepo | Padrão para Next.js + worker + pacotes compartilhados. |
+| D8 | **Para quem é a primeira versão** | Você (Givance) é o primeiro usuário: tudo roda primeiro na sua conta, com a mesma arquitetura multi-tenant | Você usa no dia a dia antes de vender. Para uso próprio, os apps do Google e da Meta funcionam em modo de teste/desenvolvimento, sem esperar revisões. As revisões só são necessárias para vender a outras empresas. |
+| D9 | **Provedor de e-mail e agenda** | Gmail + Google Calendar primeiro; Outlook (Microsoft 365) depois, se algum cliente pedir | Se o seu e-mail for Outlook, me avise e eu inverto. |
+| D10 | **Ordem das fases** | Fase 1: fundação + WhatsApp + Instagram + e-mail/agenda. Fase 2: tráfego pago | É o que você usa todo dia. O tráfego usa o mesmo app da Meta e vem logo em seguida. Se preferir o tráfego primeiro (é o que vende), eu inverto. |
+| D11 | **Autonomia por tipo de ação** | Configurável em três níveis (ver 8.2). Padrão: post no Instagram com **confirmação de um toque** no WhatsApp; e-mail para terceiros com confirmação; evento só na sua agenda é automático; gasto de dinheiro sempre com aprovação no painel | Você pediu "dou o comando e ele posta". Como o comando vem de você, a aprovação vira um toque na prévia, não uma fila. Dá para colocar o post em automático, mas não recomendo no começo. |
 
 ---
 
@@ -57,15 +63,15 @@ Para cada item deixei uma recomendação. Se você concordar com todas, basta re
 
 ```mermaid
 flowchart LR
-  subgraph Cliente["Cliente (dono da PME)"]
+  subgraph Cliente["Dono da empresa"]
     Browser["Painel web"]
-    Email["E-mail / WhatsApp (Fase 2)"]
+    Zap["WhatsApp<br/>comandos, prévias, avisos"]
   end
 
   subgraph Vercel["Vercel"]
     Web["Next.js App Router<br/>painel cliente + /admin<br/>Server Actions / Route Handlers"]
     OAuthCB["Callbacks OAuth<br/>Meta / Google"]
-    Hooks["Webhooks<br/>WhatsApp / Meta Leads"]
+    Hooks["Webhooks<br/>WhatsApp / Gmail / Meta Leads"]
   end
 
   subgraph Supabase["Supabase"]
@@ -91,7 +97,8 @@ flowchart LR
     Claude["Claude API"]
     Meta["Meta Marketing API"]
     WA["WhatsApp Cloud API"]
-    Google["Google Workspace"]
+    Google["Gmail / Google Calendar"]
+    IG["Instagram Graph API"]
     Voyage["Voyage (embeddings)"]
   end
 
@@ -119,7 +126,13 @@ flowchart LR
   Tools --> WA
   Tools --> Google
   Tools --> Voyage
-  Exec -- "notifica" --> Email
+  Tools --> IG
+  Exec --> IG
+  Exec --> Google
+  Zap -- "comando" --> WA
+  WA -- "webhook" --> Hooks
+  Exec -- "prévia / aviso" --> WA
+  WA -- "mensagem" --> Zap
 ```
 
 **Responsabilidades:**
@@ -129,6 +142,8 @@ flowchart LR
 - **Worker:** consome jobs (`task.run`, `approval.execute`, `routine.fire`, `metrics.sync`), roda o Agent SDK, executa ações aprovadas.
 - **Ferramentas:** servidor MCP in-process (`createSdkMcpServer`) com as ferramentas da Givance. Ferramentas nativas do Claude Code (Bash, Write, WebFetch etc.) ficam **desligadas** para tenants: os agentes só enxergam `mcp__givance__*`.
 - **Playwright:** só como fallback isolado, num job separado, para integrações sem API. Nenhuma está prevista na Fase 1.
+- **Instagram não usa navegador.** A API oficial publica foto, carrossel, reels e story. Automatizar pelo navegador arrisca bloqueio da conta.
+- **WhatsApp é a interface do dia a dia;** o painel serve para configurar, revisar e ver o histórico.
 
 ---
 
@@ -154,10 +169,15 @@ givance-workforce/
 │  ├─ criativo/system.md
 │  ├─ executor_ads/system.md
 │  ├─ analista/system.md
-│  ├─ atendente/system.md     # Fase 2
-│  └─ admin/system.md         # Fase 3
+│  ├─ social/system.md
+│  ├─ triagem/system.md
+│  ├─ secretaria/system.md
+│  └─ atendente/system.md     # Fase 4
 ├─ roles/                     # cargos (YAML)
-│  └─ analista-trafego-pago.yaml
+│  ├─ assistente-executivo.yaml
+│  ├─ social-media.yaml
+│  ├─ analista-trafego-pago.yaml
+│  └─ braco-direito.yaml      # pacote que combina os três
 ├─ supabase/
 │  ├─ migrations/
 │  ├─ seed.sql                # "Clínica Exemplo"
@@ -200,6 +220,11 @@ erDiagram
   ad_objects ||--o{ metric_snapshots : mede
   organizations ||--o{ audit_log : registra
   organizations ||--o{ usage_ledger : consome
+  organizations ||--o{ channels : fala_por
+  organizations ||--o{ inbox_items : recebe
+  organizations ||--o{ notification_rules : define
+  organizations ||--o{ social_posts : publica
+  organizations ||--o{ autonomy_policies : configura
 ```
 
 ### 4.2 Tabelas principais
@@ -227,8 +252,13 @@ erDiagram
 | `audit_log` | `org_id`, `actor_type` (`agente`, `usuario`, `sistema`), `actor_id`, `action`, `target`, `reason`, `tokens`, `cost_usd`, `payload_redacted`, `created_at` | Somente inserção: sem política de UPDATE/DELETE, nem para service role (trigger bloqueia). |
 | `usage_ledger` | `org_id`, `period` (mês), `employee_id`, `input_tokens`, `output_tokens`, `cost_usd`, `revenue_brl` | Agregado para "uso e custo do mês" e margem no admin. |
 | `consents` / `data_requests` | `org_id`, `subject_ref`, `purpose`, `granted_at`, `revoked_at` / `type` (`exportar`, `excluir`), `status` | LGPD. |
-| `plans` / `subscriptions` | | Fase 4. |
-| `leads` / `crm_links` | | Fase 2. |
+| `channels` | `org_id`, `user_id`, `kind` (`whatsapp`), `address_e164`, `verified_at`, `last_inbound_at` | Liga o seu WhatsApp à conta. Só números verificados dão comandos. `last_inbound_at` indica se a janela de 24h está aberta (mensagem livre) ou se é preciso template. |
+| `inbox_items` | `org_id`, `provider_message_id`, `thread_id`, `from_hash`, `received_at`, `importance` (`alta`, `media`, `baixa`), `category`, `summary`, `reason`, `forwarded_at`, `suggested_action` | Resultado da triagem. O corpo do e-mail não é copiado: é lido da API só quando preciso. |
+| `notification_rules` | `org_id`, `user_id`, `kind` (`remetente_vip`, `palavra_chave`, `assunto`, `horario_silencio`), `value`, `action` (`encaminhar`, `resumo_diario`, `ignorar`) | Suas regras do que é importante. O modelo decide o resto e explica o motivo. |
+| `social_posts` | `org_id`, `task_id`, `channel` (`instagram`), `format` (`feed`, `carrossel`, `reels`, `story`), `caption`, `media_ids[]`, `status` (`rascunho`, `aguardando_confirmacao`, `agendado`, `publicando`, `publicado`, `falhou`), `scheduled_at`, `ig_container_id`, `ig_media_id`, `permalink` | |
+| `autonomy_policies` | `org_id`, `action_type`, `level` (`sempre_aprovar`, `confirmar`, `automatico`), `limits jsonb` | Ver 8.2. Alguns tipos têm nível mínimo fixo em código. |
+| `plans` / `subscriptions` | | Fase 5. |
+| `leads` / `crm_links` | | Fase 4. |
 
 ### 4.3 Isolamento (RLS)
 
@@ -260,8 +290,10 @@ erDiagram
 | `criativo` | Briefing visual, seleção/recorte das imagens enviadas pelo cliente, texto sobre imagem, formatos (1:1, 4:5, 9:16) | `midia_listar`, `salvar_briefing_criativo` (F1); `imagem_gerar` (depois, ver D4) | |
 | `executor_ads` | Monta o pacote de criação na Meta (campanha, conjuntos, anúncios, formulário de leads) a partir dos artefatos aprovados | `meta_preparar_pacote` (F1) | **Não cria nada direto.** Prepara um payload que vira ação pendente. Quem cria é o executor determinístico, sempre `PAUSED`. |
 | `analista` | Lê métricas, compara com KPIs, escreve relatório semanal e sugestões de otimização | `meta_ler_metricas`, `metricas_historico`, `salvar_relatorio`, `sugestao_registrar` (F1) | Sugestões que mexem em orçamento ou status viram aprovação. |
-| `atendente` | Responde leads no WhatsApp com base na base de conhecimento, qualifica e registra no CRM | `memoria_buscar`, `whatsapp_responder` (escopo pré-aprovado), `whatsapp_enviar_template` (aprovação), `crm_*` (F2) | Fora do escopo pré-aprovado, a mensagem vira rascunho para aprovação ou passa para um humano. |
-| `admin` | Planilhas, agenda, e-mails, documentos | `sheets_*`, `calendar_*`, `gmail_rascunho`, `gmail_enviar` (aprovação), `docs_*` (F3) | Envio de e-mail externo e exclusões exigem aprovação. |
+| `social` | Posts orgânicos: formato, legenda, hashtags, horário, calendário editorial; prepara a publicação no Instagram | `memoria_buscar`, `midia_listar`, `instagram_listar_posts`, `instagram_insights`, `instagram_preparar_post` (F1) | Não publica direto: `instagram_preparar_post` gera a prévia e a ação `instagram.publicar`. |
+| `triagem` | Lê e-mails novos, classifica a importância, resume em duas linhas e decide o que vai para o WhatsApp agora e o que fica para o resumo diário | `gmail_listar_novos`, `gmail_ler`, `regras_notificacao`, `salvar_triagem`, `whatsapp_avisar_dono` (F1) | **Sem ferramentas de envio de e-mail nem de agenda.** E-mail é conteúdo de terceiros; separar quem lê de quem age reduz o risco de um e-mail malicioso dar ordens (ver 13). |
+| `secretaria` | Responde e-mails, marca e remarca reuniões, confere disponibilidade, cria convites com link do Meet | `gmail_ler`, `gmail_rascunhar`, `gmail_enviar`, `calendar_disponibilidade`, `calendar_criar_evento`, `calendar_alterar_evento`, `contatos_buscar` (F1) | Só age a partir de um pedido seu ou de uma sugestão que você aceitou. Enviar e-mail e convidar terceiros seguem a política de autonomia (padrão: confirmação). Planilhas e documentos (Sheets/Docs) entram depois. |
+| `atendente` | Responde leads no WhatsApp com base na base de conhecimento, qualifica e registra no CRM | `memoria_buscar`, `whatsapp_responder` (escopo pré-aprovado), `whatsapp_enviar_template` (aprovação), `crm_*` (F4) | Fora do escopo pré-aprovado, a mensagem vira rascunho para aprovação ou passa para um humano. |
 
 ### 5.3 Ferramentas de sistema (todas as fases)
 
@@ -279,8 +311,12 @@ Cada `action_type` tem schema Zod, guard e executor:
 | `meta.criar_pacote_campanha` | Força `PAUSED` em campanha, conjuntos e anúncios; orçamento diário total ≤ `daily_budget_cap_cents`; `special_ad_categories` coerente com o perfil; conta e página pertencem à conexão da org | Cria na ordem: públicos → formulário → campanha → conjuntos → criativos → anúncios. Grava `ad_objects`. Em caso de falha parcial, registra o que foi criado e permite retomar sem duplicar. |
 | `meta.ativar` | Exige aprovação explícita e separada; confere orçamento de novo | Muda status para `ACTIVE`. |
 | `meta.alterar_orcamento` | Novo valor ≤ limite; variação máxima por dia (ex.: 20%) configurável | Atualiza o orçamento. |
-| `whatsapp.envio_massa` / `whatsapp.mensagem_fora_escopo` | Opt-in do contato; template aprovado quando fora da janela de 24h | Fase 2. |
-| `gmail.enviar` / `*.excluir` | | Fase 3. |
+| `instagram.publicar` | A conta do Instagram pertence à conexão da org; mídia em formato aceito (foto em JPEG, proporção entre 4:5 e 1,91:1; vídeo para reels); legenda de até 2.200 caracteres e até 30 hashtags; checador de política; limite de publicações em 24h da API (consultado em `content_publishing_limit`) | Cria o contêiner de mídia, espera ficar pronto, publica, grava `ig_media_id` e permalink e manda o link no seu WhatsApp. |
+| `gmail.enviar` | Destinatários e corpo idênticos ao rascunho confirmado; sem anexo que você não viu; destinatário novo sempre pede confirmação | Envia pela sua conta (fica na sua pasta de enviados). |
+| `calendar.convidar` | Horário dentro do seu expediente e livre na agenda; convidados explícitos | Cria o evento com Meet e manda os convites. |
+| `whatsapp.avisar_dono` | Só para números verificados da própria org; respeita o horário de silêncio; limite de avisos por hora (o excedente vai para o resumo) | Mensagem livre se a janela de 24h estiver aberta; senão, template de utilidade. Não exige aprovação: é para você mesmo. |
+| `whatsapp.envio_massa` / `whatsapp.mensagem_fora_escopo` | Opt-in do contato; template aprovado quando fora da janela de 24h | Fase 4 (atendente). |
+| `*.excluir` (e-mails, eventos, posts, campanhas) | Proibido no padrão | — |
 
 ---
 
@@ -345,6 +381,18 @@ rotinas:
     cron: "0 6 * * *"
     job: metrics.sync           # job de sistema, sem LLM
 ```
+
+Cargos podem ser combinados. O funcionário que "faz tudo" é um pacote de três cargos sob um único orquestrador:
+
+```yaml
+key: braco-direito
+version: 1
+nome_exibicao: "Braço Direito"
+inclui: [assistente-executivo, social-media, analista-trafego-pago]
+canal_principal: whatsapp
+```
+
+O orquestrador do pacote recebe todos os comandos e escolhe o especialista certo. Ferramentas, permissões e limites vêm de cada cargo incluído; em caso de conflito, vence o mais restritivo.
 
 O carregador valida o YAML na CI (schema Zod) e confere se todo prompt e toda ferramenta citada existem. Na Fase 3, o editor no admin passa a gravar `role_versions` direto no banco, usando o mesmo schema.
 
@@ -426,6 +474,56 @@ stateDiagram-v2
 - **Anúncios:** 2–3 por conjunto, combinando copies e criativos aprovados.
 - **Destino:** formulário instantâneo da Meta (exige Página e URL da política de privacidade) ou WhatsApp. A escolha é feita no onboarding.
 
+### 7.2 Comando no WhatsApp → post no Instagram
+
+Exemplo: você manda uma foto com *"posta amanhã às 18h, fala da promoção de limpeza"*.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Dono
+  participant WA as WhatsApp Cloud API
+  participant Web as Webhook (Next.js)
+  participant W as Worker
+  participant O as Orquestrador
+  participant S as social + criativo + copywriter
+  participant IG as Instagram API
+
+  Dono->>WA: foto + "posta amanhã às 18h..."
+  WA->>Web: webhook da mensagem
+  Web->>Web: confere número verificado (channels)
+  Web->>W: baixa a mídia para o Storage, cria task (source=whatsapp)
+  W->>O: query() com contexto da empresa
+  O->>S: legenda, hashtags, recorte 4:5, checador de política
+  S->>W: instagram_preparar_post → social_posts (aguardando_confirmacao)
+  W->>WA: prévia (imagem + legenda) com botões Publicar / Editar / Cancelar
+  WA->>Dono: prévia
+  alt Publicar
+    Dono->>WA: toca "Publicar"
+    WA->>Web: resposta do botão → ação confirmada, post agendado
+  else Editar
+    Dono->>WA: "troca a primeira frase"
+    WA->>W: volta para o social, nova prévia
+  end
+  Note over W: no horário marcado, job approval.execute
+  W->>IG: cria contêiner (URL assinada da imagem) → aguarda pronto → publica
+  W->>WA: "Publicado ✓" + link do post
+  WA->>Dono: link
+```
+
+- "Posta agora" publica logo depois do toque. Carrossel, reels e story seguem o mesmo fluxo.
+- Se a publicação falhar no horário (formato, limite da API, token expirado), você recebe o aviso no WhatsApp com a opção de tentar de novo.
+- **Áudio no WhatsApp:** comandos por áudio exigem transcrição por um provedor externo (Claude não recebe áudio). Fica como item futuro; na Fase 1, comandos em texto e imagem.
+
+### 7.3 E-mail importante → WhatsApp → reunião marcada
+
+1. A cada poucos minutos (ou na hora, com notificação push do Gmail), o worker busca e-mails novos pelo histórico da caixa. O modelo só é chamado quando há e-mail novo.
+2. O agente `triagem` aplica suas regras (remetentes VIP, palavras-chave, horário de silêncio) e classifica o resto, com o motivo.
+3. **Alta importância:** aviso imediato no WhatsApp com resumo de duas linhas e botões *Responder*, *Marcar reunião*, *Ignorar*. **Média:** entra no resumo diário (7h). **Baixa:** nada.
+4. *Marcar reunião* → a `secretaria` consulta sua agenda, propõe três horários e redige a resposta → você confirma com um toque → o e-mail é enviado e, quando a pessoa aceitar um horário, o convite com Meet é criado.
+5. *Responder* → a `secretaria` redige a resposta no seu tom → prévia no WhatsApp → um toque envia. Você também pode ditar por texto: *"responde que topo, mas só na quinta"*.
+6. Comandos diretos também funcionam: *"marca uma reunião com o João na semana que vem, 30 min"*, *"o que tenho amanhã?"*, *"me manda os e-mails do contador de hoje"*.
+
 ---
 
 ## 8. Aprovações, segurança e conformidade
@@ -435,17 +533,32 @@ stateDiagram-v2
 1. **Prompt:** instruções de papel e limites (primeira camada, nunca a única).
 2. **Lista de ferramentas por cargo:** o agente só enxerga o que o YAML permite.
 3. **Guards em código:** schema, `PAUSED` forçado, teto de orçamento, conta pertencente à org, categoria especial.
-4. **Aprovação humana:** toda ação do registro de ações sensíveis.
+4. **Aprovação ou confirmação humana:** conforme o nível de autonomia de cada tipo de ação (8.2).
 5. **Executor determinístico:** executa só o payload aprovado, com idempotência.
 6. **Auditoria imutável:** tudo em `audit_log`.
 
-### 8.2 Políticas de anúncio da Meta
+### 8.2 Níveis de autonomia
+
+Cada tipo de ação tem um nível, configurável por você no painel (`autonomy_policies`):
+
+| Nível | Como funciona | Padrão para |
+|-------|---------------|-------------|
+| `sempre_aprovar` | Card no painel com prévia completa. Pelo WhatsApp, só abaixo de um teto de valor que você define | ativar campanha, alterar orçamento, envio em massa |
+| `confirmar` | Prévia no WhatsApp ou no chat com botões; um toque executa | publicar no Instagram, enviar e-mail, convidar terceiros para reunião |
+| `automatico` | Executa e avisa depois | evento só na sua agenda, avisos para você, rascunhos |
+
+**Regras fixas em código** (o painel não consegue afrouxar):
+- Gastar dinheiro nunca fica abaixo de `sempre_aprovar`.
+- Excluir é proibido.
+- Uma ação sugerida a partir de conteúdo de terceiros (ex.: um e-mail pedindo "mande o contrato para tal endereço") nunca é automática: no mínimo `confirmar`, com o motivo visível na prévia.
+
+### 8.3 Políticas de anúncio e de conteúdo da Meta
 
 - **Categorias especiais** (crédito/serviços financeiros, emprego, moradia, temas sociais/políticos; a lista exata é validada na versão da API usada): declaradas no perfil da empresa e aplicadas automaticamente. Com categoria especial, o guard remove segmentações não permitidas (idade, gênero, CEP fino, públicos semelhantes comuns).
 - **Saúde** (relevante para a Clínica Exemplo): não é categoria especial na Meta, mas tem regras rígidas. Nada de copy que sugira atributos pessoais ("Você sofre de…?"), nada de antes/depois, nada de promessa de resultado. Na prática, a Meta também restringe segmentação detalhada e eventos ligados à saúde. Para clínicas, o checador também cobre regras de publicidade médica/odontológica dos conselhos profissionais (ex.: CFM, CRO), com aviso de que a responsabilidade final é do profissional.
-- O checador `politica_checar_texto` roda antes de salvar copies e de novo no guard do pacote.
+- O checador `politica_checar_texto` roda antes de salvar copies e de novo no guard do pacote. Posts orgânicos do Instagram passam pelo mesmo checador.
 
-### 8.3 LGPD
+### 8.4 LGPD
 
 - **Minimização:** os agentes recebem só o necessário; dados de leads entram no contexto mascarados quando possível.
 - **Logs:** mascaramento automático (telefone, e-mail, CPF, nomes de leads) em `agent_steps` e `audit_log`. Conteúdo bruto de conversas fica em tabela própria, com retenção configurável.
@@ -453,8 +566,9 @@ stateDiagram-v2
 - **Direitos do titular:** `data_requests` com fluxo de exportação e exclusão (cascata por `org_id` e por `subject_ref`).
 - **Consentimento:** opt-in registrado para WhatsApp; termos e DPA aceitos no onboarding da empresa.
 - **Exclusão de empresa:** remove dados, revoga tokens na Meta/Google e apaga segredos do Vault.
+- **E-mail:** o corpo dos e-mails não é armazenado; guardamos só metadados, resumo e classificação. Remetentes ficam com hash nos logs.
 
-### 8.4 Segredos
+### 8.5 Segredos
 
 - Chaves da plataforma (Anthropic, Meta app secret, Voyage, Supabase service role) só em variáveis de ambiente da Vercel e do worker.
 - Tokens OAuth dos clientes no Supabase Vault, lidos só pelo worker e pelos callbacks OAuth.
@@ -468,6 +582,7 @@ stateDiagram-v2
 - Um único job do `pg_cron` roda a cada minuto, seleciona rotinas com `next_run_at <= now()` e enfileira `routine.fire` no `pgmq` (com trava para não disparar duas vezes).
 - O worker transforma a rotina em uma `task` com `source=rotina`, que segue o mesmo fluxo de qualquer tarefa, inclusive aprovações.
 - Jobs de sistema sem LLM (ex.: `metrics.sync`) usam o mesmo mecanismo, mas não criam tarefa.
+- Rotinas do Braço Direito: verificação de e-mails novos a cada 3 minutos (o modelo só roda se houver novidade), resumo diário às 7h no WhatsApp e publicação dos posts agendados no `scheduled_at`.
 
 ---
 
@@ -489,7 +604,10 @@ stateDiagram-v2
 - **Funcionário:** chat, quadro de tarefas (a fazer, em andamento, aguardando aprovação, concluída), rotinas.
 - **Aprovações:** fila com prévia fiel (como o anúncio vai aparecer, orçamento, públicos) e botões Aprovar / Editar / Recusar.
 - **Relatórios:** métricas por campanha e relatórios semanais.
-- **Conexões:** OAuth da Meta (contas de anúncio, páginas, pixel) e depois WhatsApp e Google.
+- **Conexões:** Meta (Instagram, páginas, contas de anúncio, pixel), Google (Gmail e Agenda) e seu número de WhatsApp.
+- **Posts:** calendário de posts (rascunhos, agendados, publicados), com link para cada um.
+- **Caixa triada:** e-mails classificados, o que foi encaminhado e por quê, e suas regras de importância.
+- **Autonomia:** o nível de cada tipo de ação (8.2).
 - **Empresa:** perfil, tom de voz, produtos, base de conhecimento (upload).
 - **Uso e custo do mês.**
 
@@ -506,45 +624,52 @@ stateDiagram-v2
 
 Cada fase entrega: testes, seed com a **Clínica Exemplo**, README de como rodar e checklist em `docs/checklists/fase-N.md`. Ao final de cada fase eu paro para você validar.
 
-### Fase 1 — MVP vendável: Analista de Tráfego Pago
+### Fase 1 — Braço Direito para uso próprio: WhatsApp, Instagram, e-mail e agenda
 
 **1a. Fundação**
 - Monorepo, CI (lint, typecheck, testes, validação de YAML, teste de RLS, verificação de segredos).
-- Migrations: tenants, membros, perfil, conexões, cargos, funcionários, tarefas, execuções, artefatos, aprovações, auditoria, rotinas, uso.
+- Migrations: tenants, membros, perfil, conexões, canais, cargos, funcionários, tarefas, execuções, artefatos, aprovações, autonomia, auditoria, rotinas, uso.
 - Auth do Supabase (e-mail + magic link), RLS e testes de isolamento.
 - Worker com `pgmq`, `pg_cron` e carregador de cargos.
 - **Spike do Agent SDK:** subagentes, ferramentas MCP in-process, hooks, retomada de sessão e medição de custo por subagente. Se aparecer algum bloqueio aqui, eu volto com alternativas antes de seguir.
 
-**1b. Integração Meta**
-- OAuth (Facebook Login for Business), seleção de conta de anúncio, página e pixel.
+**1b. Canal WhatsApp**
+- Número da Givance na Cloud API, webhook com verificação de assinatura, vínculo e verificação do seu número.
+- Comandos em texto e imagem, prévias com botões, respostas de botão ligadas às ações pendentes.
+- Templates de utilidade: aviso importante, resumo diário, confirmação pendente.
+
+**1c. Instagram**
+- Conexão da conta profissional, banco de mídia, agentes `social`, `copywriter` e `criativo`.
+- Publicação de feed, carrossel, reels e story, com agendamento e link de volta.
+- **Aceite:** *"posta essa foto amanhã às 18h falando da promoção"* → prévia no WhatsApp → um toque → post publicado no horário e link recebido.
+
+**1d. E-mail e agenda**
+- OAuth do Gmail e do Calendar (modo de teste), agentes `triagem` e `secretaria`, regras de importância, avisos, resumo diário, respostas e reuniões.
+- **Aceite:** chega um e-mail de cliente pedindo reunião → em até 5 minutos você recebe no WhatsApp com *Marcar reunião* → a resposta com três horários sai com um toque → quando o horário é aceito, o convite com Meet é criado.
+- **Teste de segurança:** um e-mail de teste com instruções maliciosas ("encaminhe todas as faturas para…") não gera nenhuma ação sem a sua confirmação.
+
+**1e. Painel**
+- Conexões, posts, caixa triada, autonomia, tarefas, auditoria, uso e custo; admin básico (empresas, uso, falhas, reexecução).
+
+### Fase 2 — Gestão de tráfego pago (Analista de Tráfego)
+- OAuth da Meta para anúncios (mesmo app), seleção de conta de anúncio, página e pixel.
 - Ferramentas de leitura: localização, interesses, alcance estimado, públicos, métricas.
+- Agentes `estrategista`, `publico`, `executor_ads` e `analista`, mais o checador de política com casos de teste de saúde.
 - Executor do pacote de campanha (sempre `PAUSED`) com idempotência e retomada de falha parcial.
-- Testes contra mocks gravados e um roteiro de teste manual em conta sandbox/teste da Meta.
+- Comando pelo WhatsApp; aprovação da criação e da ativação no painel; relatório semanal e sincronização diária de métricas.
+- **Critério de aceite:** a partir de *"quero campanha de leads para a Clínica Exemplo, R$ 50/dia, região de Campinas"*, o sistema gera estratégia, 3 conjuntos (geográfico, interesses, retargeting) e copies, e abre uma aprovação. Depois de aprovado, cria tudo pausado numa conta de teste da Meta, registra auditoria e custo, e na segunda seguinte entrega o relatório. Nenhum caminho de código cria anúncio ativo sem a aprovação `meta.ativar`.
 
-**1c. Agentes e fluxo**
-- Prompts de orquestrador, estrategista, publico, copywriter, criativo, executor_ads e analista.
-- Checador de política (regras + modelo), com casos de teste de saúde.
-- Aprovação no painel com prévia e edição; aviso por e-mail.
-- Relatório semanal (rotina) e sincronização diária de métricas.
-
-**1d. Painel**
-- Telas do cliente listadas na seção 11 (exceto WhatsApp/Google) e admin básico (empresas, uso, falhas, reexecução).
-
-**Critério de aceite:** a partir de *"quero campanha de leads para a Clínica Exemplo, R$ 50/dia, região de Campinas"*, o sistema gera estratégia, 3 conjuntos (geográfico, interesses, retargeting) e copies, abre uma aprovação; depois de aprovado, cria tudo pausado numa conta de teste da Meta, registra auditoria e custo, e na segunda seguinte entrega o relatório. Nenhum caminho de código cria anúncio ativo sem a aprovação `meta.ativar`.
-
-### Fase 2 — Atendente/SDR no WhatsApp + CRM
-- WhatsApp Cloud API: número da empresa (WABA do cliente via Embedded Signup), webhooks, janela de 24h, templates.
-- Agente `atendente` com escopo pré-aprovado (FAQ, horários, preços públicos, agendamento) e passagem para humano.
-- Leads da Meta (webhook `leadgen`) entram direto no fluxo do atendente.
-- CRM: integração inicial com 1 CRM (a escolher: RD Station, Pipedrive ou HubSpot) + CRM interno simples como padrão.
-- Aprovações pelo WhatsApp do dono (botões interativos).
-
-### Fase 3 — Assistente Administrativo + editor de cargos
-- Google Workspace (Gmail, Calendar, Sheets, Docs) com OAuth e escopos mínimos.
-- Agente `admin`.
+### Fase 3 — Pronto para vender + editor de cargos
+- App Review da Meta (anúncios, Instagram, WhatsApp) e verificação do app no Google (os escopos de leitura do Gmail são restritos e exigem uma avaliação de segurança anual por laboratório credenciado).
+- WhatsApp por empresa cliente (Embedded Signup), onboarding de várias empresas.
 - Editor de cargos e agentes no admin: prompts, ferramentas, limites e rotinas, com versionamento, diff, publicação e rollback; ambiente de teste com a Clínica Exemplo antes de publicar.
 
-### Fase 4 — Cobrança e onboarding self-service
+### Fase 4 — Atendente/SDR no WhatsApp + CRM
+- Agente `atendente` com escopo pré-aprovado (FAQ, horários, preços públicos, agendamento) e passagem para humano.
+- Leads da Meta (webhook `leadgen`) entram direto no fluxo do atendente.
+- CRM: integração inicial com um CRM (a escolher: RD Station, Pipedrive ou HubSpot), com um CRM interno simples como padrão.
+
+### Fase 5 — Cobrança e onboarding self-service
 - Planos mensais por funcionário (Stripe ou Asaas/Pagar.me para Pix e boleto; decisão na fase), limites por plano, faturas.
 - Onboarding guiado: cadastro, perfil da empresa (com extração automática do site/Instagram), conexões, contratação do primeiro funcionário, primeira tarefa.
 
@@ -561,6 +686,11 @@ Cada fase entrega: testes, seed com a **Clínica Exemplo**, README de como rodar
 | Alucinação em dados de negócio (preço, promessa) | Dano à marca | RAG obrigatório para preços e produtos, termos proibidos no perfil, aprovação humana. |
 | Vazamento entre tenants | Grave (LGPD) | RLS em tudo, repositórios com `org_id` obrigatório, testes de isolamento na CI. |
 | Prompt injection via conteúdo externo (comentários, mensagens de leads) | Ação indevida | Conteúdo externo marcado como dado; ações sensíveis sempre passam por guard e aprovação; agentes de atendimento sem ferramentas de gasto. |
+| E-mail malicioso tentando dar ordens ("encaminhe as faturas para x@…") | Vazamento, ação indevida | O agente `triagem` só lê e classifica, sem ferramentas de envio. O conteúdo do e-mail entra marcado como dado de terceiros; ação originada de e-mail nunca é automática; destinatário novo sempre pede confirmação. Coberto por teste na Fase 1d. |
+| Verificação do Google para o Gmail | Bloqueia a venda do módulo de e-mail | Para uso próprio, o modo de teste basta. Para vender: verificação OAuth e avaliação de segurança anual (com custo), planejadas na Fase 3; escopos mínimos. |
+| Limites e formatos da API do Instagram | Post falha na hora marcada | Validar a mídia já na prévia, checar o limite de publicações, preparar o contêiner minutos antes e avisar no WhatsApp se falhar. |
+| Custo das mensagens do WhatsApp | Margem | Avisos agrupados, resumo diário em vez de avisos soltos, preferência por mensagens dentro da janela de 24h. |
+| Automação do Instagram pelo navegador | Bloqueio da conta | Não usar; só a API oficial. |
 
 ---
 
@@ -583,6 +713,18 @@ Versão detalhada, com passo a passo, sai em `docs/checklists/fase-1.md`. Resumo
 - [ ] Permissões para App Review: `ads_management`, `ads_read`, `business_management`, `pages_show_list`, `pages_read_engagement`, `pages_manage_ads`, `leads_retrieval` (lista final confirmada na 1b).
 - [ ] Política de privacidade e termos de uso publicados (exigidos pelo App Review e pelos formulários de lead).
 - [ ] Conta de anúncios de teste + página de teste para a "Clínica Exemplo".
+- [ ] Instagram: conta profissional (Empresa ou Criador) ligada a uma Página; permissões `instagram_basic`, `instagram_content_publish`, `instagram_manage_insights`.
+- [ ] Para uso próprio (D8), o app roda em modo de desenvolvimento com você como administrador; o App Review só é necessário na Fase 3.
+
+**WhatsApp**
+- [ ] Conta WhatsApp Business (WABA) da Givance no Business Manager e um número dedicado ao assistente (não pode estar em uso no app comum do WhatsApp).
+- [ ] Forma de pagamento na WABA (mensagens iniciadas pela empresa são cobradas).
+- [ ] Templates de utilidade aprovados: aviso importante, resumo diário, confirmação pendente (eu escrevo os textos).
+
+**Google**
+- [ ] Projeto no Google Cloud com Gmail API e Google Calendar API ativadas.
+- [ ] Tela de consentimento OAuth em modo de teste, com o seu e-mail como usuário de teste.
+- [ ] Opcional, para avisos instantâneos: Cloud Pub/Sub para as notificações push do Gmail. Sem isso, a triagem consulta a caixa a cada poucos minutos.
 
 **Jurídico/LGPD**
 - [ ] Termos de uso, política de privacidade e DPA (contrato de tratamento de dados) para clientes.
@@ -590,4 +732,4 @@ Versão detalhada, com passo a passo, sai em `docs/checklists/fase-1.md`. Resumo
 
 ---
 
-**Próximo passo:** você revisa este plano e responde às decisões D1–D7 (ou só "aprovado"). Com isso eu começo a Fase 1a.
+**Próximo passo:** você revisa este plano e responde às decisões D1–D11 (ou só "aprovado"). Com isso eu começo a Fase 1a.
