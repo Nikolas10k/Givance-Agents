@@ -1,0 +1,31 @@
+{
+  "name": "@givance/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env src/main.ts",
+    "start": "node dist/main.js",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run --dir src",
+    "test:integration": "vitest run --dir tests",
+    "spike:agent-sdk": "tsx --env-file-if-exists=.env src/spikes/agent-sdk.ts",
+    "roles:publish": "tsx --env-file-if-exists=.env src/cli/publicar-cargos.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "0.3.325",
+    "@givance/agents": "workspace:*",
+    "@givance/core": "workspace:*",
+    "@givance/db": "workspace:*",
+    "@givance/tools": "workspace:*",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "tsup": "^9.0.0",
+    "tsx": "^4.23.15",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "pg": "^8.23.1",
+    "@types/pg": "^8.23.1"
+  }
+}

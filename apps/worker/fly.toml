@@ -1,0 +1,27 @@
+# Worker no Fly.io. Deploy a partir da raiz do repositório:
+#   fly deploy --config apps/worker/fly.toml
+# Segredos (uma vez): fly secrets set SUPABASE_URL=... SUPABASE_SECRET_KEY=... ANTHROPIC_API_KEY=...
+app = "givance-worker"        # troque pelo nome do seu app no Fly
+primary_region = "gru"        # São Paulo
+
+[build]
+  dockerfile = "apps/worker/Dockerfile"
+
+[env]
+  PORT = "8080"
+  WORKER_CONCURRENCY = "2"
+  LOG_LEVEL = "info"
+
+# Sem serviço HTTP público: o worker só consome filas e fica sempre ligado.
+[checks]
+  [checks.saude]
+    type = "http"
+    port = 8080
+    path = "/health"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "30s"
+
+[[vm]]
+  memory = "2gb"
+  cpus = 1

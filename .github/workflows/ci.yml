@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: Lint, tipos, testes e build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm typecheck
+      - run: pnpm test
+      - name: Cargos válidos e seed atualizado
+        run: pnpm roles:build --check
+      - name: Build do painel
+        run: pnpm --filter @givance/web build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: valor-de-build
+          NEXT_TELEMETRY_DISABLED: '1'
+      - name: Build do worker
+        run: pnpm --filter @givance/worker build
+
+  banco:
+    name: Banco (RLS) e fluxo do worker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Supabase local (migrations + seed)
+        run: pnpm db:start
+      - name: Testes de banco (isolamento, permissões, fluxos)
+        run: pnpm test:db
+      - name: Teste de ponta a ponta do worker
+        run: pnpm --filter @givance/worker test:integration
+      - name: Tipos do banco em dia com as migrations
+        run: |
+          pnpm db:types
+          git diff --exit-code packages/db/src/database.types.ts
+
+  segredos:
+    name: Busca de segredos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

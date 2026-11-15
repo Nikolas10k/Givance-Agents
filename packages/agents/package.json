@@ -1,0 +1,27 @@
+{
+  "name": "@givance/agents",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run",
+    "roles:validate": "tsx src/cli/roles.ts validar",
+    "roles:build": "tsx src/cli/roles.ts gerar-seed"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "0.3.325",
+    "@anthropic-ai/sdk": "^1.8.0",
+    "@givance/core": "workspace:*",
+    "@givance/tools": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
+  }
+}

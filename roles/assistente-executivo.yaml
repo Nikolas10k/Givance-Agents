@@ -1,0 +1,56 @@
+# Assistente Executivo: e-mail, agenda e avisos do que é importante no WhatsApp.
+# As ferramentas de Gmail, Agenda e WhatsApp entram nas etapas 1b e 1d; até lá o runtime
+# oferece aos agentes só as ferramentas já implementadas.
+key: assistente-executivo
+version: 1
+nome_exibicao: Assistente Executivo
+descricao: >-
+  Lê os e-mails novos, avisa no WhatsApp o que é importante, responde e marca reuniões
+  com a sua confirmação.
+conexoes_obrigatorias: [google, whatsapp]
+canal_principal: whatsapp
+
+especialistas:
+  triagem:
+    modelo: claude-opus-5-5
+    esforco: low
+    descricao: >-
+      Classifica e-mails recebidos por importância (alta, média, baixa), resume cada um em
+      duas linhas e diz o motivo. Use para olhar a caixa de entrada; ela não responde nem age.
+    ferramentas:
+      [gmail_listar_novos, gmail_ler, regras_notificacao, salvar_triagem, whatsapp_avisar_dono]
+  secretaria:
+    modelo: claude-opus-5-5
+    descricao: >-
+      Redige respostas de e-mail no tom do dono, consulta a agenda, propõe horários e prepara
+      convites de reunião. Use quando o dono pedir para responder, marcar ou remarcar algo.
+    ferramentas:
+      - gmail_ler
+      - gmail_rascunhar
+      - calendar_disponibilidade
+      - calendar_alterar_evento
+      - contatos_buscar
+      - memoria_buscar
+
+permissoes:
+  acoes:
+    gmail.enviar: confirmar
+    calendar.convidar: confirmar
+    calendar.criar_evento: automatico
+    whatsapp.avisar_dono: automatico
+    memoria.registrar: confirmar
+
+limites:
+  custo_maximo_usd_por_tarefa: 2
+  chamadas_por_ferramenta_por_tarefa: 40
+
+rotinas:
+  - id: resumo-diario
+    cron: '0 7 * * *'
+    titulo: Resumo do dia
+    tarefa: >-
+      Monte o resumo do dia para o dono: compromissos de hoje e e-mails de importância média
+      que ficaram para o resumo. Seja breve e mande pelo canal principal.
+  - id: sincronizar-email
+    cron: '*/3 * * * *'
+    job: gmail.sincronizar

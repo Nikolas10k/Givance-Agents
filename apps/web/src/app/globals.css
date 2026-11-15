@@ -1,0 +1,43 @@
+@import 'tailwindcss';
+
+/*
+ * Visual sóbrio: tons neutros, um único acento (petróleo) e cores de status discretas.
+ * Superfícies: L0 = fundo da página, L1 = cartões e tabelas (borda fina, sem sombra pesada).
+ */
+@theme {
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  --color-tinta: #1c2024;
+  --color-suave: #5c6670;
+  --color-linha: #dfe3e6;
+  --color-fundo: #f5f6f7;
+  --color-superficie: #ffffff;
+
+  --color-acento: #1f4e5f;
+  --color-acento-forte: #173c49;
+  --color-acento-claro: #e7eff1;
+
+  --color-alerta: #8a5300;
+  --color-alerta-claro: #fdf3e1;
+  --color-sucesso: #1d6640;
+  --color-sucesso-claro: #e6f3ec;
+  --color-erro: #9b2c2c;
+  --color-erro-claro: #fbeaea;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-fundo);
+  color: var(--color-tinta);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-acento);
+  outline-offset: 2px;
+}

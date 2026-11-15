@@ -1,0 +1,24 @@
+{
+  "name": "@givance/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./service": "./src/service.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run --dir src --passWithNoTests",
+    "test:db": "vitest run --dir tests"
+  },
+  "dependencies": {
+    "@givance/core": "workspace:*",
+    "@givance/tools": "workspace:*",
+    "@supabase/supabase-js": "^2.119.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1",
+    "pg": "^8.23.1"
+  }
+}

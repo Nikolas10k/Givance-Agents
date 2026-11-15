@@ -1,0 +1,17 @@
+{
+  "name": "@givance/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "cron-parser": "^5.10.6",
+    "zod": "^4.6.7"
+  }
+}

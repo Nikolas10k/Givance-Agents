@@ -1,0 +1,49 @@
+# Social Media: posts orgânicos no Instagram, por comando ou por planejamento semanal.
+key: social-media
+version: 1
+nome_exibicao: Social Media
+descricao: >-
+  Planeja, escreve e prepara posts do Instagram. Você manda o comando (e a foto, se tiver) e
+  confirma a prévia com um toque.
+conexoes_obrigatorias: [instagram, whatsapp]
+canal_principal: whatsapp
+
+especialistas:
+  social:
+    modelo: claude-opus-5-5
+    descricao: >-
+      Decide formato, horário e estrutura de posts do Instagram e prepara a publicação. Use
+      para qualquer pedido de post, carrossel, reels ou story, e para o planejamento da semana.
+    ferramentas:
+      - memoria_buscar
+      - midia_listar
+      - instagram_listar_posts
+      - instagram_insights
+      - instagram_preparar_post
+  copywriter:
+    modelo: claude-opus-5-5
+    descricao: >-
+      Escreve textos no tom da marca: legendas, chamadas, mensagens. Use quando precisar de
+      texto final ou de variações de um texto.
+    ferramentas: [memoria_buscar, politica_checar_texto]
+  criativo:
+    modelo: claude-opus-5-5
+    descricao: >-
+      Escolhe e adapta as imagens enviadas pelo dono (recorte por formato, texto sobre imagem)
+      e escreve briefings visuais. Não gera imagens do zero.
+    ferramentas: [midia_listar]
+
+permissoes:
+  acoes:
+    instagram.publicar: confirmar
+    memoria.registrar: confirmar
+
+rotinas:
+  - id: planejamento-semanal
+    cron: '0 9 * * 1'
+    titulo: Planejamento de posts da semana
+    tarefa: >-
+      Proponha os posts desta semana para o Instagram da empresa: tema, formato e dia de cada
+      um, considerando datas relevantes e o que funcionou nas últimas semanas. Não publique
+      nada: mande a proposta para o dono escolher.
+    agente_inicial: social

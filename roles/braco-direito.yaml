@@ -1,0 +1,22 @@
+# Braço Direito: o funcionário que "faz tudo" da Fase 1. Combina os cargos abaixo sob um
+# único orquestrador.
+# - Permissões: vence sempre a mais restritiva entre este arquivo e os cargos incluídos.
+# - Limites: os declarados aqui valem para o pacote; os que faltarem usam o menor valor
+#   entre os cargos incluídos.
+# O tráfego pago (analista-trafego-pago) entra numa versão nova deste cargo na Fase 2.
+key: braco-direito
+version: 1
+nome_exibicao: Braço Direito
+descricao: >-
+  Cuida do seu e-mail, da sua agenda e do Instagram da empresa. Você fala com ele pelo
+  WhatsApp e confirma o que for importante.
+inclui: [assistente-executivo, social-media]
+canal_principal: whatsapp
+
+orquestrador:
+  modelo: claude-opus-5-5
+  esforco: high
+
+limites:
+  custo_maximo_usd_por_tarefa: 3
+  turnos_maximos: 40

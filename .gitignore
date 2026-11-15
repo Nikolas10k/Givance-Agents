@@ -1,0 +1,21 @@
+node_modules/
+dist/
+.next/
+.turbo/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# ambiente
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# supabase local
+supabase/.temp/
+supabase/.branches/
+
+# sistema
+.DS_Store
+*.log
