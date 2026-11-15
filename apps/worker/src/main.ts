@@ -3,6 +3,7 @@ import { resolveContentRoot } from '@givance/agents';
 import { errorMessage } from '@givance/core';
 import { createSupabaseToolServices, queueRepo, tasksRepo } from '@givance/db';
 import { createServiceClient } from '@givance/db/service';
+import { createWhatsAppClient } from '@givance/integrations';
 import { createDefaultRegistry } from '@givance/tools';
 import { loadConfig } from './config';
 import { QueueConsumer } from './consumer';
@@ -10,6 +11,8 @@ import type { JobHandler, WorkerDeps } from './deps';
 import { createActionExecuteHandler } from './handlers/action-execute';
 import { createRoutineFireHandler, scheduleUnscheduledRoutines } from './handlers/routine-fire';
 import { createTaskRunHandler } from './handlers/task-run';
+import { createWhatsAppInboundHandler } from './handlers/whatsapp-inbound';
+import { createWhatsAppOutboundHandler } from './handlers/whatsapp-outbound';
 import { createLogger } from './logger';
 import { taskRunMessage } from './messages';
 
@@ -31,6 +34,22 @@ async function main() {
     ...(config.ANTHROPIC_API_KEY ? { apiKey: config.ANTHROPIC_API_KEY } : {}),
     logger,
     jobs: JOBS,
+    ...(config.WHATSAPP_PHONE_NUMBER_ID && config.WHATSAPP_ACCESS_TOKEN
+      ? {
+          whatsapp: {
+            client: createWhatsAppClient({
+              phoneNumberId: config.WHATSAPP_PHONE_NUMBER_ID,
+              accessToken: config.WHATSAPP_ACCESS_TOKEN,
+              graphVersion: config.WHATSAPP_GRAPH_VERSION,
+            }),
+            templates: {
+              aviso: config.WHATSAPP_TEMPLATE_AVISO,
+              confirmacao: config.WHATSAPP_TEMPLATE_CONFIRMACAO,
+              idioma: config.WHATSAPP_TEMPLATE_IDIOMA,
+            },
+          },
+        }
+      : {}),
   };
   if (!deps.apiKey) {
     logger.warn(
@@ -40,7 +59,7 @@ async function main() {
 
   const queue = queueRepo(db);
   const common = { client: queue, pollIntervalMs: config.WORKER_POLL_INTERVAL_MS, logger };
-  const consumers = [
+  const consumers: QueueConsumer[] = [
     new QueueConsumer({
       ...common,
       queue: 'tarefas',
@@ -75,6 +94,29 @@ async function main() {
       maxAttempts: 3,
     }),
   ];
+
+  if (deps.whatsapp) {
+    consumers.push(
+      new QueueConsumer({
+        ...common,
+        queue: 'whatsapp_entrada',
+        handler: createWhatsAppInboundHandler(deps),
+        visibilitySeconds: 120,
+        concurrency: 4,
+        maxAttempts: 5,
+      }),
+      new QueueConsumer({
+        ...common,
+        queue: 'whatsapp_saida',
+        handler: createWhatsAppOutboundHandler(deps),
+        visibilitySeconds: 60,
+        concurrency: 4,
+        maxAttempts: 6,
+      }),
+    );
+  } else {
+    logger.warn('WhatsApp não configurado: mensagens ficam na fila até o canal ser ligado.');
+  }
 
   const agendar = async () => {
     try {

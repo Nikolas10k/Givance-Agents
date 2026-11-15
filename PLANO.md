@@ -2,7 +2,7 @@
 
 > Plataforma que vende **"funcionários de IA"** para PMEs brasileiras. Cada funcionário é um time de agentes coordenado por um orquestrador, que executa tarefas reais e presta contas como um colaborador humano.
 >
-> **Status:** revisão 2 aprovada. **Fase 1a (fundação) concluída**: veja o [README](README.md) e o [checklist da Fase 1a](docs/checklists/fase-1a.md). Próxima etapa: 1b (canal WhatsApp).
+> **Status:** revisão 2 aprovada. **Fases 1a (fundação) e 1b (canal WhatsApp) concluídas**: veja o [README](README.md) e os checklists [1a](docs/checklists/fase-1a.md) e [1b](docs/checklists/fase-1b.md). Próxima etapa: 1c (Instagram).
 >
 > **O que mudou na revisão 2:** além do tráfego pago, o sistema agora cobre **e-mail** (triagem e resposta), **agenda** (marcar reuniões), **avisos do que é importante no WhatsApp** e **posts no Instagram por comando**. O WhatsApp virou o canal principal de comando. Novos agentes: `social`, `triagem` e `secretaria`. Entram níveis de autonomia por tipo de ação (8.2) e um cargo combinado, o **Braço Direito**. O roadmap foi reordenado: você é o primeiro usuário.
 

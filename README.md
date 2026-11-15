@@ -2,7 +2,7 @@
 
 Plataforma de "funcionários de IA" para pequenas e médias empresas: cada funcionário é um time de agentes (Claude Agent SDK) coordenado por um orquestrador, que trabalha com aprovação do dono para tudo que mexe com o mundo real. O plano completo está em [PLANO.md](PLANO.md).
 
-**Etapa atual: Fase 1a (fundação).** Banco multiempresa com RLS, fila e agendamento, motor de aprovações e autonomia, runtime de agentes, worker, painel com login por link mágico e CI. As integrações (WhatsApp, Instagram, Gmail e Agenda) entram nas etapas 1b a 1d.
+**Etapa atual: Fase 1b (canal WhatsApp).** Sobre a fundação da 1a (banco multiempresa com RLS, filas, aprovações, runtime de agentes, worker e painel), a 1b liga o WhatsApp do dono: pedidos por texto e foto, prévias com botões, avisos com janela de 24h e horário de silêncio. Instagram, Gmail e Agenda entram nas etapas 1c e 1d.
 
 ## Estrutura
 
@@ -15,6 +15,7 @@ packages/
   tools/      Ferramentas dos agentes, registro de ações, motor de autonomia e aprovações.
   agents/     Carregador de cargos e prompts, runtime do Claude Agent SDK.
   db/         Clientes e repositórios do Supabase (sempre filtrando por empresa).
+  integrations/  Clientes de APIs externas (WhatsApp Cloud API).
 agents/       Prompts de sistema de cada agente (agents/<nome>/system.md). Editáveis.
 roles/        Cargos em YAML (roles/<cargo>.yaml). Editáveis.
 supabase/     Migrations, seeds e configuração local.
@@ -88,4 +89,4 @@ Regras de composição (cargo que inclui outros, como o Braço Direito): permiss
 
 ## Deploy
 
-Passo a passo em [docs/checklists/fase-1a.md](docs/checklists/fase-1a.md).
+Passo a passo em [docs/checklists/fase-1a.md](docs/checklists/fase-1a.md) e, para o WhatsApp, [docs/checklists/fase-1b.md](docs/checklists/fase-1b.md).

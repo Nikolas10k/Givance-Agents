@@ -472,3 +472,26 @@ export async function taskHistory(
   }
   return linhas.join('\n');
 }
+
+/**
+ * Exclusão completa de uma empresa (LGPD): apaga os arquivos dela no Storage (pela API, que
+ * é o único jeito permitido) e depois os dados, em cascata, com admin_purge_organization.
+ */
+export async function purgeOrganization(
+  db: TypedClient,
+  orgId: string,
+  confirmSlug: string,
+): Promise<void> {
+  const bucket = db.storage.from('midia');
+  for (;;) {
+    const { data, error } = await bucket.list(orgId, { limit: 100 });
+    if (error) throw new Error(`Storage: ${error.message}`);
+    if (!data || data.length === 0) break;
+    const removidos = await bucket.remove(data.map((f) => `${orgId}/${f.name}`));
+    if (removidos.error) throw new Error(`Storage: ${removidos.error.message}`);
+  }
+  assertOk(
+    'empresa: excluir',
+    await db.rpc('admin_purge_organization', { p_org_id: orgId, p_confirm_slug: confirmSlug }),
+  );
+}

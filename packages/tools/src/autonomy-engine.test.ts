@@ -66,4 +66,18 @@ describe('motor de autonomia', () => {
     ).toMatchObject({ level: 'sempre_aprovar' });
     expect(resolveAutonomy(base({ roleForbidden: true }))).toMatchObject({ allowed: false });
   });
+  it('aviso para o próprio dono continua automático mesmo depois de ler conteúdo de terceiros', () => {
+    expect(
+      resolveAutonomy(
+        base({
+          action: acao({
+            type: 'whatsapp.avisar_dono',
+            defaultAutonomy: 'automatico',
+            selfDirected: true,
+          }),
+          tainted: true,
+        }),
+      ),
+    ).toMatchObject({ allowed: true, level: 'automatico' });
+  });
 });

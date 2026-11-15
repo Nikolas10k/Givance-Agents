@@ -29,3 +29,13 @@ export function parseMessage<T extends z.ZodType>(schema: T, body: unknown): z.i
   }
   return parsed.data;
 }
+
+export const whatsappOutboundMessage = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('message.deliver'), message_id: z.uuid(), org_id: z.uuid() }),
+  z.object({ type: z.literal('approval.notify'), approval_id: z.uuid(), org_id: z.uuid() }),
+]);
+
+export const whatsappInboundMessage = z.object({
+  type: z.literal('webhook'),
+  payload: z.unknown(),
+});

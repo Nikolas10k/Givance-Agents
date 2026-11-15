@@ -3,6 +3,14 @@ import type { QueueMessage } from '@givance/db';
 import type { Logger } from './logger';
 
 /** Erro que não adianta repetir: a mensagem é descartada na hora. */
+/** Não é falha: a mensagem deve voltar à fila depois de `seconds` (ex.: horário de silêncio). */
+export class DeferError extends Error {
+  constructor(readonly seconds: number) {
+    super(`Adiado por ${seconds}s`);
+    this.name = 'DeferError';
+  }
+}
+
 export class PermanentError extends Error {
   constructor(message: string) {
     super(message);
@@ -128,6 +136,13 @@ export class QueueConsumer {
       await this.options.handler(message, controller.signal);
       await client.archive(queue, message.msgId);
     } catch (error) {
+      if (error instanceof DeferError && message.readCount < 50) {
+        log.debug('Mensagem adiada', { segundos: error.seconds });
+        await client
+          .setVisibility(queue, message.msgId, Math.max(1, Math.round(error.seconds)))
+          .catch(() => undefined);
+        return;
+      }
       const esgotou =
         message.readCount >= this.options.maxAttempts || error instanceof PermanentError;
       if (esgotou) {

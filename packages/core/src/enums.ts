@@ -124,7 +124,13 @@ export const ROUTINE_KINDS = ['tarefa', 'job'] as const;
 export type RoutineKind = (typeof ROUTINE_KINDS)[number];
 
 /** Filas do worker (pgmq). */
-export const QUEUES = ['tarefas', 'acoes', 'rotinas'] as const;
+export const QUEUES = [
+  'tarefas',
+  'acoes',
+  'rotinas',
+  'whatsapp_entrada',
+  'whatsapp_saida',
+] as const;
 export type QueueName = (typeof QUEUES)[number];
 
 export const REGULATED_SECTORS = ['saude', 'financeiro', 'juridico', 'educacao', 'outro'] as const;

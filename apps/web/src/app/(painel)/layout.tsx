@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { requirePanelSession } from '@/lib/session';
 import { switchOrg } from './actions';
@@ -13,6 +14,14 @@ export default async function PainelLayout({ children }: { children: ReactNode }
             <span className="text-sm font-semibold tracking-wide text-acento">
               GIVANCE WORKFORCE
             </span>
+            <nav className="flex items-center gap-1 text-sm" aria-label="Seções do painel">
+              <Link href="/" className="rounded-md px-2 py-1 hover:bg-fundo">
+                Início
+              </Link>
+              <Link href="/whatsapp" className="rounded-md px-2 py-1 hover:bg-fundo">
+                WhatsApp
+              </Link>
+            </nav>
             {session.orgs.length > 1 ? (
               <form action={switchOrg} className="flex items-center gap-2">
                 <label htmlFor="org" className="sr-only">
